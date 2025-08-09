@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { FileUp, Loader2 } from 'lucide-react';
 
 export default function HomePage() {
@@ -104,7 +104,7 @@ export default function HomePage() {
                     <p className="mb-2 text-sm text-gray-400">
                       <span className="font-semibold text-gold-primary">Click to upload</span> or drag and drop
                     </p>
-                    <p className="text-xs text-gray-500">HAR files only (max 10MB)</p>
+                    <p className="text-xs text-gray-500">HAR files only (max 50MB)</p>
                     {file && <p className="text-xs text-green-400 mt-2">{file.name}</p>}
                   </div>
                   <Input id="har-file-upload" type="file" className="hidden" accept=".har" onChange={handleFileChange} />

@@ -45,7 +45,7 @@ export class HarStreamingParser {
    * @param harContent - Raw HAR JSON string
    * @param onProgress - Progress callback (0-1 scale)
    * @returns Promise resolving to normalized HAR entries
-   * @throws {Error} HAR_TOO_LARGE - File exceeds 10MB
+   * @throws {Error} HAR_TOO_LARGE - File exceeds 50MB
    * @throws {Error} INVALID_HAR_STRUCTURE - Invalid HAR format
    */
   public async parse(
@@ -54,8 +54,8 @@ export class HarStreamingParser {
   ): Promise<SemanticHarEntry[]> {
     // Size validation
     const sizeInMB = new Blob([harContent]).size / (1024 * 1024);
-    if (sizeInMB > 10) {
-      throw new Error(`HAR_TOO_LARGE: File size ${sizeInMB.toFixed(2)}MB exceeds 10MB limit`);
+    if (sizeInMB > 50) {
+      throw new Error(`HAR_TOO_LARGE: File size ${sizeInMB.toFixed(2)}MB exceeds 50MB limit`);
     }
 
     onProgress?.(0.1, 'Parsing HAR structure...');
