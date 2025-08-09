@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Request dependency analysis and matrix building
  * @module @/lib/analyzer
@@ -5,7 +6,6 @@
 
 import type { SemanticHarEntry } from '@/lib/parser/types';
 import type { DependencyMatrix } from './types';
-
 
 /**
  * Build dependency matrix from HAR entries
@@ -19,14 +19,29 @@ export class DependencyMatrixBuilder {
    * @returns Dependency matrix with relationships
    */
   public build(entries: SemanticHarEntry[]): DependencyMatrix {
+    // Handle empty entries
+    if (!entries || entries.length === 0) {
+      return {
+        adjacencyMatrix: [],
+        criticalPath: [],
+        redundantIndices: [],
+        depths: [],
+        topologicalOrder: []
+      };
+    }
+
     const n = entries.length;
     const adjacencyMatrix = this.initializeMatrix(n);
     
-    // Analyze dependencies
-    this.analyzeCookieDependencies(entries, adjacencyMatrix);
-    this.analyzeTokenDependencies(entries, adjacencyMatrix);
-    this.analyzeRedirectChains(entries, adjacencyMatrix);
-    this.analyzeReferrerDependencies(entries, adjacencyMatrix);
+    // Analyze dependencies with error handling
+    try {
+      this.analyzeCookieDependencies(entries, adjacencyMatrix);
+      this.analyzeTokenDependencies(entries, adjacencyMatrix);
+      this.analyzeRedirectChains(entries, adjacencyMatrix);
+      this.analyzeReferrerDependencies(entries, adjacencyMatrix);
+    } catch (error) {
+      console.error('Error analyzing dependencies:', error);
+    }
     
     // Calculate derived properties
     const depths = this.calculateDepths(adjacencyMatrix);
@@ -63,13 +78,18 @@ export class DependencyMatrixBuilder {
     matrix: number[][]
   ): void {
     for (let i = 0; i < entries.length; i++) {
-      const requiredCookies = Object.keys(entries[i].request.cookies);
+      // Safely access cookies
+      const requiredCookies = entries[i]?.request?.cookies 
+        ? Object.keys(entries[i].request.cookies) 
+        : [];
       
       if (requiredCookies.length === 0) continue;
       
       // Look for earlier responses that set these cookies
       for (let j = 0; j < i; j++) {
-        const setCookies = Object.keys(entries[j].response.cookies);
+        const setCookies = entries[j]?.response?.cookies 
+          ? Object.keys(entries[j].response.cookies)
+          : [];
         
         const hasRequiredCookie = requiredCookies.some(cookie => 
           setCookies.includes(cookie)
@@ -99,27 +119,41 @@ export class DependencyMatrixBuilder {
     ];
     
     for (let i = 0; i < entries.length; i++) {
-      const requestHeaders = JSON.stringify(entries[i].request.headers);
-      const requestBody = entries[i].request.body?.data || '';
-      const requestText = requestHeaders + requestBody;
-      
-      // Check if request contains tokens
-      for (const pattern of tokenPatterns) {
-        const match = requestText.match(pattern);
-        if (match) {
-          const token = match[1] || match[0];
-          
-          // Find earlier response that provided this token
-          for (let j = 0; j < i; j++) {
-            const responseBody = entries[j].response.body?.data || '';
-            const responseHeaders = JSON.stringify(entries[j].response.headers);
-            const responseText = responseBody + responseHeaders;
+      try {
+        const requestHeaders = entries[i]?.request?.headers 
+          ? JSON.stringify(entries[i].request.headers) 
+          : '';
+        const requestBody = entries[i]?.request?.body?.data || '';
+        const requestText = requestHeaders + requestBody;
+        
+        // Check if request contains tokens
+        for (const pattern of tokenPatterns) {
+          const match = requestText.match(pattern);
+          if (match) {
+            const token = match[1] || match[0];
             
-            if (responseText.includes(token)) {
-              matrix[i][j] = 1; // Request i depends on response j for token
+            // Find earlier response that provided this token
+            for (let j = 0; j < i; j++) {
+              try {
+                const responseBody = entries[j]?.response?.body?.data || '';
+                const responseHeaders = entries[j]?.response?.headers 
+                  ? JSON.stringify(entries[j].response.headers)
+                  : '';
+                const responseText = responseBody + responseHeaders;
+                
+                if (responseText.includes(token)) {
+                  matrix[i][j] = 1; // Request i depends on response j for token
+                }
+              } catch (e) {
+                // Skip this entry if there's an error
+                continue;
+              }
             }
           }
         }
+      } catch (e) {
+        // Skip this entry if there's an error
+        continue;
       }
     }
   }
@@ -133,19 +167,20 @@ export class DependencyMatrixBuilder {
   ): void {
     for (let i = 0; i < entries.length; i++) {
       try {
-        const redirectUrl = entries[i].response.redirectUrl;
+        const redirectUrl = entries[i]?.response?.redirectUrl;
       
         if (!redirectUrl) continue;
         
         // Find next request to redirect URL
         for (let j = i + 1; j < entries.length; j++) {
-          if (entries[j].request.url === redirectUrl) {
+          if (entries[j]?.request?.url === redirectUrl) {
             matrix[j][i] = 1; // Request j depends on redirect from i
             break;
           }
         }
       } catch(e) {
         // Ignore if redirectUrl is invalid
+        continue;
       }
     }
   }
@@ -159,19 +194,20 @@ export class DependencyMatrixBuilder {
   ): void {
     for (let i = 0; i < entries.length; i++) {
       try {
-        const referer = entries[i].request.headers['referer'] || 
-                        entries[i].request.headers['referrer'];
+        const headers = entries[i]?.request?.headers || {};
+        const referer = headers['referer'] || headers['referrer'];
         
         if (!referer) continue;
         
         // Find earlier request to referrer URL
         for (let j = 0; j < i; j++) {
-          if (entries[j].request.url === referer) {
+          if (entries[j]?.request?.url === referer) {
             matrix[i][j] = 1; // Request i was referred by j
           }
         }
       } catch (e) {
         // Ignore if referrer is an invalid URL
+        continue;
       }
     }
   }
@@ -181,10 +217,13 @@ export class DependencyMatrixBuilder {
    */
   private calculateDepths(matrix: number[][]): number[] {
     const n = matrix.length;
+    if (n === 0) return [];
+    
     const depths = Array(n).fill(0);
     const visited = Array(n).fill(false);
     
     const calculateDepth = (index: number): number => {
+      if (index < 0 || index >= n) return 0;
       if (visited[index]) return depths[index];
       visited[index] = true;
       
@@ -213,6 +252,8 @@ export class DependencyMatrixBuilder {
    */
   private topologicalSort(matrix: number[][]): number[] {
     const n = matrix.length;
+    if (n === 0) return [];
+    
     const adj = new Map<number, number[]>();
     const inDegree = Array(n).fill(0);
 
@@ -246,7 +287,12 @@ export class DependencyMatrixBuilder {
       }
     }
 
-    return result.length === n ? result : []; // Return empty if cycle detected
+    // If cycle detected, return indices in order
+    if (result.length !== n) {
+      return Array.from({ length: n }, (_, i) => i);
+    }
+    
+    return result;
   }
   
   /**
@@ -257,7 +303,7 @@ export class DependencyMatrixBuilder {
     depths: number[]
   ): number[] {
     const n = matrix.length;
-    if (n === 0) return [];
+    if (n === 0 || depths.length === 0) return [];
     
     // Find request with maximum depth (end of critical path)
     let maxDepth = -1;
@@ -269,19 +315,25 @@ export class DependencyMatrixBuilder {
       }
     }
 
-    if (endNode === -1) return [];
+    if (endNode === -1 || maxDepth === 0) {
+      // No dependencies found, return first entry as critical path
+      return n > 0 ? [0] : [];
+    }
     
     // Trace back critical path
     const path: number[] = [endNode];
     let current = endNode;
+    const visited = new Set<number>();
     
-    while (depths[current] > 0) {
+    while (depths[current] > 0 && !visited.has(current)) {
+      visited.add(current);
+      
       // Find dependency with maximum depth
       let nextNode = -1;
       let nextDepth = -1;
       
       for (let j = 0; j < n; j++) {
-        if (matrix[current][j] === 1 && depths[j] >= nextDepth) {
+        if (matrix[current][j] === 1 && depths[j] >= nextDepth && !visited.has(j)) {
           nextDepth = depths[j];
           nextNode = j;
         }
@@ -309,6 +361,8 @@ export class DependencyMatrixBuilder {
     const redundant: number[] = [];
     const n = entries.length;
     
+    if (n === 0) return [];
+    
     for (let i = 0; i < n; i++) {
       // Skip if in critical path
       if (criticalPath.includes(i)) continue;
@@ -326,13 +380,15 @@ export class DependencyMatrixBuilder {
         // Additional checks for redundancy
         const entry = entries[i];
         
+        if (!entry) continue;
+        
         // Mark as redundant if:
         // 1. OPTIONS preflight requests
         // 2. Failed requests (4xx, 5xx) not in critical path  
         // 3. Duplicate requests to same URL with same method
         if (
-          entry.request.method === 'OPTIONS' ||
-          entry.response.status >= 400 ||
+          entry.request?.method === 'OPTIONS' ||
+          (entry.response?.status && entry.response.status >= 400) ||
           this.isDuplicateRequest(entries, i)
         ) {
           redundant.push(i);
@@ -352,13 +408,23 @@ export class DependencyMatrixBuilder {
   ): boolean {
     const entry = entries[index];
     
+    if (!entry?.request) return false;
+    
     for (let i = 0; i < index; i++) {
-      if (
-        entries[i].request.url === entry.request.url &&
-        entries[i].request.method === entry.request.method &&
-        JSON.stringify(entries[i].request.body) === JSON.stringify(entry.request.body)
-      ) {
-        return true;
+      const otherEntry = entries[i];
+      if (!otherEntry?.request) continue;
+      
+      try {
+        if (
+          otherEntry.request.url === entry.request.url &&
+          otherEntry.request.method === entry.request.method &&
+          JSON.stringify(otherEntry.request.body) === JSON.stringify(entry.request.body)
+        ) {
+          return true;
+        }
+      } catch (e) {
+        // Skip comparison if there's an error
+        continue;
       }
     }
     
@@ -370,6 +436,18 @@ export class DependencyMatrixBuilder {
 export function buildDependencyMatrix(
   entries: SemanticHarEntry[]
 ): DependencyMatrix {
-  const builder = new DependencyMatrixBuilder();
-  return builder.build(entries);
+  try {
+    const builder = new DependencyMatrixBuilder();
+    return builder.build(entries);
+  } catch (error) {
+    console.error('Failed to build dependency matrix:', error);
+    // Return empty matrix on error
+    return {
+      adjacencyMatrix: [],
+      criticalPath: [],
+      redundantIndices: [],
+      depths: [],
+      topologicalOrder: []
+    };
+  }
 }
