@@ -1,16 +1,11 @@
-import { tailwindExtension } from './src/lib/theme/goldTheme.ts';
+import { tailwindExtension } from './src/lib/theme/goldTheme.mjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  reactStrictMode: true,
   theme: {
     extend: tailwindExtension,
   },
-  plugins: [],
 };
 
 export default nextConfig;
