@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAppDispatch } from '@/store';
+import { useAppDispatch } from '@/store/hooks';
 import { setWorkspace } from '@/store/slices/workspaceSlice';
 import { setAnalysisProgress, setAnalysisState } from '@/store/slices/analysisSlice';
 import { createParser } from '@/lib/parser/HarStreamingParser';
