@@ -54,6 +54,10 @@ export default function DashboardPage() {
 
       try {
         setIsLoading(true);
+        // Clear previous workspace before loading a new one
+        if (currentWorkspace) {
+            dispatch(clearWorkspace());
+        }
         const workspaceData = await getGist(gistId);
         dispatch(setWorkspace(workspaceData));
       } catch (error: any) {
@@ -65,12 +69,9 @@ export default function DashboardPage() {
       }
     };
 
-    if (!currentWorkspace) {
-      loadWorkspace();
-    } else {
-      setIsLoading(false);
-    }
-  }, [dispatch, router, toast, currentWorkspace]);
+    loadWorkspace();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, router, toast]);
 
   const harEntries = currentWorkspace?.harEntries || [];
   
@@ -134,7 +135,7 @@ export default function DashboardPage() {
     if (generatedCode) setActiveTab('generator');
   }, [generatedCode]);
 
-  if (isLoading) {
+  if (isLoading || !currentWorkspace) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6 space-y-6">
         <Skeleton className="h-32 w-full" />
@@ -145,10 +146,6 @@ export default function DashboardPage() {
         </div>
       </div>
     )
-  }
-
-  if (!currentWorkspace) {
-    return <div className="flex min-h-screen items-center justify-center bg-background"><p>No workspace loaded. Redirecting...</p></div>
   }
   
   return (
@@ -190,3 +187,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
