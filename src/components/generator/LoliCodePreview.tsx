@@ -14,9 +14,9 @@ interface LoliCodePreviewProps {
 
 export function LoliCodePreview({ code, onCopy, onDownload }: LoliCodePreviewProps) {
   return (
-    <Card className="bg-black/20 border-gold-primary/30">
+    <Card className="bg-black/30 border-yellow-400/40">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-gold-primary">LoliCode Preview</CardTitle>
+        <CardTitle className="text-yellow-400">LoliCode Preview</CardTitle>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={onCopy} disabled={!code}>
             <Copy className="h-4 w-4 mr-2" /> Copy
@@ -27,7 +27,7 @@ export function LoliCodePreview({ code, onCopy, onDownload }: LoliCodePreviewPro
         </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-96 bg-black/50 rounded-md p-2">
+        <ScrollArea className="h-96 bg-black/60 rounded-md p-2 border border-yellow-400/20">
           <pre className="text-xs text-white font-mono whitespace-pre-wrap">
             {code || '// Generate code to see preview...'}
           </pre>

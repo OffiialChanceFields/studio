@@ -42,9 +42,9 @@ export function TokenDetectionPanel({ entries }: TokenDetectionPanelProps) {
   }, [entries]);
 
   return (
-    <Card className="bg-black/20 border-gold-primary/30">
+    <Card className="bg-black/30 border-yellow-400/40">
       <CardHeader>
-        <CardTitle className="text-gold-primary">Detected Tokens</CardTitle>
+        <CardTitle className="text-yellow-400">Detected Tokens</CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[200px]">
@@ -52,7 +52,7 @@ export function TokenDetectionPanel({ entries }: TokenDetectionPanelProps) {
             <div className="space-y-4">
               {Array.from(detectedTokens.entries()).map(([type, values]) => (
                 <div key={type}>
-                  <h4 className="font-bold text-gold-secondary mb-1">{type}</h4>
+                  <h4 className="font-bold text-yellow-500 mb-1">{type}</h4>
                   <div className="flex flex-col gap-1">
                     {Array.from(values).map((value, i) => (
                       <Badge key={i} variant="secondary" className="font-mono text-xs truncate bg-gray-700 text-gray-300">

@@ -23,10 +23,10 @@ export function RequestDataTable({ entries, onEntryClick, dependencyMatrix }: Re
   };
 
   return (
-    <ScrollArea className="h-[600px] rounded-lg border border-gold-primary/30 bg-black/20 p-1">
+    <ScrollArea className="h-[600px] rounded-lg border border-yellow-400/40 bg-black/30 p-1">
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent">
+          <TableRow className="hover:bg-transparent border-b-yellow-400/40">
             <TableHead className="w-[80px]">Method</TableHead>
             <TableHead className="w-[80px]">Status</TableHead>
             <TableHead>URL</TableHead>
@@ -39,9 +39,9 @@ export function RequestDataTable({ entries, onEntryClick, dependencyMatrix }: Re
             <TableRow
               key={entry.entryId}
               onClick={() => onEntryClick(entry, index)}
-              className="cursor-pointer hover:bg-gold-primary/10"
+              className="cursor-pointer hover:bg-yellow-400/10 border-b-yellow-400/20"
             >
-              <TableCell><Badge variant="outline" className="border-gold-primary/50">{entry.request.method}</Badge></TableCell>
+              <TableCell><Badge variant="outline" className="border-yellow-400/60 text-yellow-400">{entry.request.method}</Badge></TableCell>
               <TableCell><Badge className={getStatusColor(entry.response.status)}>{entry.response.status}</Badge></TableCell>
               <TableCell className="truncate max-w-xs">{new URL(entry.request.url).pathname}</TableCell>
               <TableCell>{entry.duration.toFixed(0)}ms</TableCell>

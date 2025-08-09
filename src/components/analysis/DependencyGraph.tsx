@@ -15,12 +15,12 @@ export function DependencyGraph({ entries, matrix, onNodeClick }: DependencyGrap
   // A real implementation would use a library like vis.js, d3, or react-flow.
   // This is a simplified representation.
   return (
-    <Card className="bg-black/20 border-gold-primary/30">
+    <Card className="bg-black/30 border-yellow-400/40">
       <CardHeader>
-        <CardTitle className="text-gold-primary">Dependency Graph</CardTitle>
+        <CardTitle className="text-yellow-400">Dependency Graph</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[500px] overflow-auto p-4 text-white rounded-md bg-black/30">
+        <div className="h-[500px] overflow-auto p-4 text-white rounded-md bg-black/40">
           <p className="text-center text-gray-400 mb-4">(This is a simplified view of the dependency graph)</p>
           <div className="space-y-2 font-mono text-sm">
             {matrix.topologicalOrder.map((entryIndex) => {
@@ -29,8 +29,8 @@ export function DependencyGraph({ entries, matrix, onNodeClick }: DependencyGrap
                 .map((val, i) => (val === 1 ? i : -1))
                 .filter(i => i !== -1);
               return (
-                <div key={entry.entryId} className="p-2 rounded bg-black/50 hover:bg-gold-primary/10 cursor-pointer" onClick={() => onNodeClick(entryIndex)}>
-                  <p className="text-gold-secondary">
+                <div key={entry.entryId} className="p-2 rounded bg-black/60 hover:bg-yellow-400/10 cursor-pointer border border-yellow-400/20" onClick={() => onNodeClick(entryIndex)}>
+                  <p className="text-yellow-500">
                     <span className="font-bold">[{entryIndex}]</span> {entry.request.method} {new URL(entry.request.url).pathname}
                   </p>
                   {dependencies.length > 0 && (

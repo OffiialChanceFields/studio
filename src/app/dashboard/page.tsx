@@ -111,33 +111,33 @@ export default function DashboardPage() {
   }
   
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-900 via-black to-yellow-900 p-6">
       <div className="max-w-[1920px] mx-auto space-y-6">
-        <div className="bg-gradient-to-r from-black via-gold-primary/10 to-black rounded-lg p-6 border border-gold-primary/30">
+        <div className="bg-gradient-to-r from-black via-yellow-900/50 to-black rounded-lg p-6 border border-yellow-400/40">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-display text-gold-primary flex items-center">
+              <h1 className="text-3xl font-display text-yellow-400 flex items-center">
                 <svg className="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
                 HAR Analysis Dashboard
               </h1>
               <p className="text-gray-400 mt-2">{currentWorkspace?.name || 'No workspace loaded'}</p>
             </div>
             <div className="flex gap-4">
-              <div className="text-center"><div className="text-2xl font-bold text-gold-primary">{statistics.totalRequests}</div><div className="text-xs text-gray-400">Requests</div></div>
-              <div className="text-center"><div className="text-2xl font-bold text-gold-primary">{statistics.uniqueDomains}</div><div className="text-xs text-gray-400">Domains</div></div>
-              <div className="text-center"><div className="text-2xl font-bold text-gold-primary">{(statistics.totalDataTransferred / 1024).toFixed(1)}KB</div><div className="text-xs text-gray-400">Data</div></div>
-              <div className="text-center"><div className="text-2xl font-bold text-gold-primary">{statistics.averageResponseTime.toFixed(0)}ms</div><div className="text-xs text-gray-400">Avg Time</div></div>
-              <div className="text-center"><div className="text-2xl font-bold text-gold-primary">{statistics.successRate.toFixed(0)}%</div><div className="text-xs text-gray-400">Success</div></div>
+              <div className="text-center"><div className="text-2xl font-bold text-yellow-400">{statistics.totalRequests}</div><div className="text-xs text-gray-400">Requests</div></div>
+              <div className="text-center"><div className="text-2xl font-bold text-yellow-400">{statistics.uniqueDomains}</div><div className="text-xs text-gray-400">Domains</div></div>
+              <div className="text-center"><div className="text-2xl font-bold text-yellow-400">{(statistics.totalDataTransferred / 1024).toFixed(1)}KB</div><div className="text-xs text-gray-400">Data</div></div>
+              <div className="text-center"><div className="text-2xl font-bold text-yellow-400">{statistics.averageResponseTime.toFixed(0)}ms</div><div className="text-xs text-gray-400">Avg Time</div></div>
+              <div className="text-center"><div className="text-2xl font-bold text-yellow-400">{statistics.successRate.toFixed(0)}%</div><div className="text-xs text-gray-400">Success</div></div>
             </div>
           </div>
         </div>
         
-        <div className="border border-gold-primary/30 rounded-lg p-4 bg-gradient-to-br from-black to-gold-primary/5">
+        <div className="border border-yellow-400/40 rounded-lg p-4 bg-gradient-to-br from-black to-yellow-900/20">
           <FilterManager totalEntries={harEntries.length} filteredCount={filteredEntries.length} />
         </div>
         
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="bg-black border border-gold-primary/30"><TabsTrigger value="requests" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black">Requests ({filteredEntries.length})</TabsTrigger><TabsTrigger value="dependencies" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black" disabled={!dependencyMatrix}>Dependencies</TabsTrigger><TabsTrigger value="generator" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black" disabled={filteredEntries.length === 0}>Generator</TabsTrigger></TabsList>
+          <TabsList className="bg-black border border-yellow-400/40"><TabsTrigger value="requests" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black">Requests ({filteredEntries.length})</TabsTrigger><TabsTrigger value="dependencies" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={!dependencyMatrix}>Dependencies</TabsTrigger><TabsTrigger value="generator" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={filteredEntries.length === 0}>Generator</TabsTrigger></TabsList>
           
           <TabsContent value="requests" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><RequestDataTable entries={filteredEntries} onEntryClick={handleOpenDetailModal} dependencyMatrix={dependencyMatrix} /></div><div className="space-y-6"><TokenDetectionPanel entries={filteredEntries} /></div></div></TabsContent>
           <TabsContent value="dependencies" className="mt-4">{dependencyMatrix && <DependencyGraph entries={filteredEntries} matrix={dependencyMatrix} onNodeClick={(index) => handleOpenDetailModal(filteredEntries[index], index)} />}</TabsContent>

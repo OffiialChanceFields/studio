@@ -86,19 +86,19 @@ export default function HomePage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-black to-gold-primary/10" style={{background: '#1A1A1A'}}>
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-yellow-900 via-black to-yellow-900">
       <div className="z-10 w-full max-w-4xl">
         <div className="text-center mb-8">
-            <h1 className="text-5xl font-headline text-gold-primary tracking-wider">HAR2LoliCode</h1>
+            <h1 className="text-5xl font-headline text-yellow-400 tracking-wider">HAR2LoliCode</h1>
             <p className="text-xl text-gray-400 mt-2">
               The premier solution for converting HAR files into high-performance LoliCode scripts.
             </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-            <Card className="w-full bg-black/30 border-gold-primary/20 shadow-lg shadow-gold-primary/10">
+            <Card className="w-full bg-black/50 border-yellow-400/30 shadow-lg shadow-yellow-400/10">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-headline text-gold-primary flex items-center gap-2">
+                    <CardTitle className="text-2xl font-headline text-yellow-400 flex items-center gap-2">
                         <FileUp className="w-6 h-6" />
                         Upload Your HAR File
                     </CardTitle>
@@ -111,12 +111,12 @@ export default function HomePage() {
                     <div className="flex flex-col items-center justify-center w-full">
                         <label
                         htmlFor="har-file-upload"
-                        className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer border-gold-primary/30 bg-black/20 hover:bg-black/40 hover:border-gold-primary/50 transition-colors"
+                        className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer border-yellow-400/40 bg-black/30 hover:bg-black/50 hover:border-yellow-400/60 transition-colors"
                         >
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <FileUp className="w-10 h-10 mb-3 text-gold-primary/70" />
+                            <FileUp className="w-10 h-10 mb-3 text-yellow-400/80" />
                             <p className="mb-2 text-sm text-gray-400">
-                            <span className="font-semibold text-gold-primary">Click to upload</span> or drag and drop
+                            <span className="font-semibold text-yellow-400">Click to upload</span> or drag and drop
                             </p>
                             <p className="text-xs text-gray-500">HAR files only (max 50MB)</p>
                             {file && <p className="text-xs text-green-400 mt-2">{file.name}</p>}
@@ -127,15 +127,15 @@ export default function HomePage() {
 
                     {isProcessing && (
                         <div className="space-y-2">
-                        <Progress value={progress} className="w-full [&>div]:bg-gold-primary" />
-                        <p className="text-sm text-center text-gold-primary/80">{progressMessage}</p>
+                        <Progress value={progress} className="w-full [&>div]:bg-yellow-400" />
+                        <p className="text-sm text-center text-yellow-400/90">{progressMessage}</p>
                         </div>
                     )}
 
                     <Button
                         onClick={handleProcessFile}
                         disabled={!file || isProcessing}
-                        className="w-full bg-gold-primary text-black font-bold hover:bg-gold-secondary disabled:bg-gray-600 disabled:text-gray-400 text-lg py-6"
+                        className="w-full bg-yellow-400 text-black font-bold hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-lg py-6"
                     >
                         {isProcessing ? (
                         <>
@@ -154,9 +154,9 @@ export default function HomePage() {
             </Card>
 
             <div className="space-y-6">
-                 <Alert className="bg-black/30 border-gold-primary/20">
-                    <Rocket className="h-4 w-4 text-gold-primary" />
-                    <AlertTitle className="text-gold-primary">How it Works</AlertTitle>
+                 <Alert className="bg-black/50 border-yellow-400/30">
+                    <Rocket className="h-4 w-4 text-yellow-400" />
+                    <AlertTitle className="text-yellow-400">How it Works</AlertTitle>
                     <AlertDescription className="text-gray-400">
                         1. Upload a HAR file from your browser's network inspector. <br />
                         2. Our engine analyzes dependencies and the critical request path. <br />
@@ -164,9 +164,9 @@ export default function HomePage() {
                         4. Generate and download your optimized LoliCode script.
                     </AlertDescription>
                 </Alert>
-                <Card className="bg-black/30 border-gold-primary/20">
+                <Card className="bg-black/50 border-yellow-400/30">
                     <CardHeader>
-                         <CardTitle className="text-xl text-gold-secondary">Why HAR2LoliCode?</CardTitle>
+                         <CardTitle className="text-xl text-yellow-500">Why HAR2LoliCode?</CardTitle>
                     </CardHeader>
                     <CardContent className="text-gray-400 space-y-2">
                         <p>✓ Automated dependency detection saves hours of manual work.</p>

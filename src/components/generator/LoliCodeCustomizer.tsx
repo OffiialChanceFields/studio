@@ -50,19 +50,19 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
   };
 
   return (
-    <Card className="bg-black/20 border-gold-primary/30">
+    <Card className="bg-black/30 border-yellow-400/40">
       <CardHeader>
-        <CardTitle className="text-gold-primary">LoliCode Customizer</CardTitle>
+        <CardTitle className="text-yellow-400">LoliCode Customizer</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <h4 className="font-bold text-gold-secondary mb-2">Select Requests</h4>
+          <h4 className="font-bold text-yellow-500 mb-2">Select Requests</h4>
           <div className="flex gap-2 mb-2">
             <Button size="sm" onClick={handleSelectAll}>All</Button>
             <Button size="sm" onClick={handleSelectNone}>None</Button>
             <Button size="sm" onClick={handleSelectCriticalPath}>Critical Path</Button>
           </div>
-          <ScrollArea className="h-64 border border-gold-primary/20 rounded-md p-2 bg-black/30">
+          <ScrollArea className="h-64 border border-yellow-400/30 rounded-md p-2 bg-black/40">
             <div className="space-y-2">
               {entries.map((entry, index) => (
                 <div key={entry.entryId} className="flex items-center space-x-2">
@@ -79,7 +79,7 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
             </div>
           </ScrollArea>
         </div>
-        <Button onClick={generate} className="w-full bg-gold-primary text-black font-bold hover:bg-gold-secondary">
+        <Button onClick={generate} className="w-full bg-yellow-400 text-black font-bold hover:bg-yellow-500">
           Generate LoliCode
         </Button>
       </CardContent>
