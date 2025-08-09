@@ -50,7 +50,7 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
   };
 
   return (
-    <Card className="bg-black/30 border-yellow-400/20">
+    <Card className="bg-black/30 border-yellow-400/20 animate-border-glow">
       <CardHeader>
         <CardTitle className="text-yellow-400">LoliCode Customizer</CardTitle>
       </CardHeader>

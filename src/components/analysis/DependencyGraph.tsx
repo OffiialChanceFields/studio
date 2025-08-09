@@ -15,7 +15,7 @@ export function DependencyGraph({ entries, matrix, onNodeClick }: DependencyGrap
   // A real implementation would use a library like vis.js, d3, or react-flow.
   // This is a simplified representation.
   return (
-    <Card className="bg-black/30 border-yellow-400/20">
+    <Card className="bg-black/30 border-yellow-400/20 animate-border-glow">
       <CardHeader>
         <CardTitle className="text-yellow-400">Dependency Graph</CardTitle>
       </CardHeader>

@@ -14,7 +14,7 @@ interface LoliCodePreviewProps {
 
 export function LoliCodePreview({ code, onCopy, onDownload }: LoliCodePreviewProps) {
   return (
-    <Card className="bg-black/30 border-yellow-400/20">
+    <Card className="bg-black/30 border-yellow-400/20 animate-border-glow">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-yellow-400">LoliCode Preview</CardTitle>
         <div className="flex gap-2">

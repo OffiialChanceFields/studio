@@ -96,7 +96,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-            <Card className="w-full bg-black/50 border-yellow-400/20 shadow-lg shadow-yellow-400/10">
+            <Card className="w-full bg-black/50 border-yellow-400/20 shadow-lg shadow-yellow-400/10 animate-border-glow">
                 <CardHeader>
                     <CardTitle className="text-2xl font-headline text-yellow-400 flex items-center gap-2">
                         <FileUp className="w-6 h-6" />
@@ -154,7 +154,7 @@ export default function HomePage() {
             </Card>
 
             <div className="space-y-6">
-                 <Alert className="bg-black/50 border-yellow-400/20">
+                 <Alert className="bg-black/50 border-yellow-400/20 animate-border-glow">
                     <Rocket className="h-4 w-4 text-yellow-400" />
                     <AlertTitle className="text-yellow-400">How it Works</AlertTitle>
                     <AlertDescription className="text-gray-400">
@@ -164,7 +164,7 @@ export default function HomePage() {
                         4. Generate and download your optimized LoliCode script.
                     </AlertDescription>
                 </Alert>
-                <Card className="bg-black/50 border-yellow-400/20">
+                <Card className="bg-black/50 border-yellow-400/20 animate-border-glow">
                     <CardHeader>
                          <CardTitle className="text-xl text-yellow-500">Why HAR2LoliCode?</CardTitle>
                     </CardHeader>
