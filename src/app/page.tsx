@@ -16,6 +16,7 @@ import { FileUp, Loader2 } from 'lucide-react';
 export default function HomePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
