@@ -132,16 +132,20 @@ export class DependencyMatrixBuilder {
     matrix: number[][]
   ): void {
     for (let i = 0; i < entries.length; i++) {
-      const redirectUrl = entries[i].response.redirectUrl;
+      try {
+        const redirectUrl = entries[i].response.redirectUrl;
       
-      if (!redirectUrl) continue;
-      
-      // Find next request to redirect URL
-      for (let j = i + 1; j < entries.length; j++) {
-        if (entries[j].request.url === redirectUrl) {
-          matrix[j][i] = 1; // Request j depends on redirect from i
-          break;
+        if (!redirectUrl) continue;
+        
+        // Find next request to redirect URL
+        for (let j = i + 1; j < entries.length; j++) {
+          if (entries[j].request.url === redirectUrl) {
+            matrix[j][i] = 1; // Request j depends on redirect from i
+            break;
+          }
         }
+      } catch(e) {
+        // Ignore if redirectUrl is invalid
       }
     }
   }
@@ -154,16 +158,20 @@ export class DependencyMatrixBuilder {
     matrix: number[][]
   ): void {
     for (let i = 0; i < entries.length; i++) {
-      const referer = entries[i].request.headers['referer'] || 
-                      entries[i].request.headers['referrer'];
-      
-      if (!referer) continue;
-      
-      // Find earlier request to referrer URL
-      for (let j = 0; j < i; j++) {
-        if (entries[j].request.url === referer) {
-          matrix[i][j] = 1; // Request i was referred by j
+      try {
+        const referer = entries[i].request.headers['referer'] || 
+                        entries[i].request.headers['referrer'];
+        
+        if (!referer) continue;
+        
+        // Find earlier request to referrer URL
+        for (let j = 0; j < i; j++) {
+          if (entries[j].request.url === referer) {
+            matrix[i][j] = 1; // Request i was referred by j
+          }
         }
+      } catch (e) {
+        // Ignore if referrer is an invalid URL
       }
     }
   }
