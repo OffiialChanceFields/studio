@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { FileUp, Loader2, Rocket } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { createGist, GIST_FILENAME } from '@/services/gistService';
 
 export default function HomePage() {
   const router = useRouter();
@@ -57,17 +58,19 @@ export default function HomePage() {
       const parser = createParser();
       const harEntries = await parser.parse(fileContent, onProgress);
 
-      dispatch(
-        setWorkspace({
-          name: file.name,
-          harEntries,
-        })
-      );
+      const workspace = {
+        name: file.name,
+        harEntries,
+      };
+
+      onProgress(0.95, 'Saving analysis to secure storage...');
+      const gistId = await createGist(workspace);
+      sessionStorage.setItem('gistId', gistId);
       
       onProgress(1, 'Analysis complete. Redirecting...');
       toast({
         title: 'Processing Complete',
-        description: `${harEntries.length} entries parsed successfully.`,
+        description: `${harEntries.length} entries parsed and stored.`,
       });
 
       router.push('/dashboard');

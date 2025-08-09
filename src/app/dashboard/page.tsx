@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Main dashboard page with integrated HAR analysis
  * @module @/app/dashboard
@@ -7,11 +8,13 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { setWorkspace, clearWorkspace } from '@/store/slices/workspaceSlice';
 import { applyFilters } from '@/lib/filter/harFilter';
 import { buildDependencyMatrix } from '@/lib/analyzer/DependencyMatrixBuilder';
 import { generateLoliCode, LoliCodeConfig } from '@/lib/generator/LoliCodeGenerator';
 import type { SemanticHarEntry } from '@/lib/parser/types';
 import { useRouter } from 'next/navigation';
+import { getGist } from '@/services/gistService';
 
 // Components
 import { FilterManager } from '@/components/filter/FilterManager';
@@ -26,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { openDetailModal } from '@/store/slices/uiSlice';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -35,14 +39,43 @@ export default function DashboardPage() {
   const { currentWorkspace } = useAppSelector(state => state.workspace);
   const filterState = useAppSelector(state => state.filter);
   
+  const [isLoading, setIsLoading] = useState(true);
   const [generatedCode, setGeneratedCode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'requests' | 'dependencies' | 'generator'>('requests');
   
   useEffect(() => {
+    const loadWorkspace = async () => {
+      const gistId = sessionStorage.getItem('gistId');
+      if (!gistId) {
+        toast({ title: "No analysis session found", description: "Please upload a HAR file first.", variant: "destructive" });
+        router.push('/');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const workspaceData = await getGist(gistId);
+        dispatch(setWorkspace(workspaceData));
+      } catch (error: any) {
+        console.error("Failed to load workspace from Gist:", error);
+        toast({ title: "Failed to load session", description: error.message, variant: "destructive" });
+        router.push('/');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     if (!currentWorkspace) {
-      router.push('/');
+      loadWorkspace();
+    } else {
+      setIsLoading(false);
     }
-  }, [currentWorkspace, router]);
+
+    // Cleanup workspace on unmount
+    return () => {
+      dispatch(clearWorkspace());
+    }
+  }, [dispatch, router, toast, currentWorkspace]);
 
   const harEntries = currentWorkspace?.harEntries || [];
   
@@ -106,8 +139,21 @@ export default function DashboardPage() {
     if (generatedCode) setActiveTab('generator');
   }, [generatedCode]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6 space-y-6">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-3 gap-6">
+          <Skeleton className="h-96 col-span-2" />
+          <Skeleton className="h-96" />
+        </div>
+      </div>
+    )
+  }
+
   if (!currentWorkspace) {
-    return <div className="flex min-h-screen items-center justify-center bg-background"><p>Loading workspace...</p></div>
+    return <div className="flex min-h-screen items-center justify-center bg-background"><p>No workspace loaded. Redirecting...</p></div>
   }
   
   return (

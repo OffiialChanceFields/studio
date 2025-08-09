@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { SemanticHarEntry } from '@/lib/parser/types';
 
-interface Workspace {
+export interface Workspace {
   name: string;
   harEntries: SemanticHarEntry[];
 }
