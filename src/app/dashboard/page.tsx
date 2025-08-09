@@ -70,11 +70,6 @@ export default function DashboardPage() {
     } else {
       setIsLoading(false);
     }
-
-    // Cleanup workspace on unmount
-    return () => {
-      dispatch(clearWorkspace());
-    }
   }, [dispatch, router, toast, currentWorkspace]);
 
   const harEntries = currentWorkspace?.harEntries || [];
