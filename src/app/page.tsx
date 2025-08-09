@@ -86,7 +86,7 @@ export default function HomePage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-yellow-900 via-black to-yellow-900">
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-gray-900 via-black to-gray-900">
       <div className="z-10 w-full max-w-4xl">
         <div className="text-center mb-8">
             <h1 className="text-5xl font-headline text-yellow-400 tracking-wider">HAR2LoliCode</h1>
@@ -96,7 +96,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-            <Card className="w-full bg-black/50 border-yellow-400/30 shadow-lg shadow-yellow-400/10">
+            <Card className="w-full bg-black/50 border-yellow-400/20 shadow-lg shadow-yellow-400/10">
                 <CardHeader>
                     <CardTitle className="text-2xl font-headline text-yellow-400 flex items-center gap-2">
                         <FileUp className="w-6 h-6" />
@@ -111,7 +111,7 @@ export default function HomePage() {
                     <div className="flex flex-col items-center justify-center w-full">
                         <label
                         htmlFor="har-file-upload"
-                        className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer border-yellow-400/40 bg-black/30 hover:bg-black/50 hover:border-yellow-400/60 transition-colors"
+                        className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer border-yellow-400/30 bg-black/30 hover:bg-black/50 hover:border-yellow-400/50 transition-colors"
                         >
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             <FileUp className="w-10 h-10 mb-3 text-yellow-400/80" />
@@ -154,7 +154,7 @@ export default function HomePage() {
             </Card>
 
             <div className="space-y-6">
-                 <Alert className="bg-black/50 border-yellow-400/30">
+                 <Alert className="bg-black/50 border-yellow-400/20">
                     <Rocket className="h-4 w-4 text-yellow-400" />
                     <AlertTitle className="text-yellow-400">How it Works</AlertTitle>
                     <AlertDescription className="text-gray-400">
@@ -164,7 +164,7 @@ export default function HomePage() {
                         4. Generate and download your optimized LoliCode script.
                     </AlertDescription>
                 </Alert>
-                <Card className="bg-black/50 border-yellow-400/30">
+                <Card className="bg-black/50 border-yellow-400/20">
                     <CardHeader>
                          <CardTitle className="text-xl text-yellow-500">Why HAR2LoliCode?</CardTitle>
                     </CardHeader>

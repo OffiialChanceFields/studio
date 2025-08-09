@@ -23,10 +23,10 @@ export function RequestDataTable({ entries, onEntryClick, dependencyMatrix }: Re
   };
 
   return (
-    <ScrollArea className="h-[600px] rounded-lg border border-yellow-400/40 bg-black/30 p-1">
+    <ScrollArea className="h-[600px] rounded-lg border border-yellow-400/20 bg-black/30 p-1">
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent border-b-yellow-400/40">
+          <TableRow className="hover:bg-transparent border-b-yellow-400/30">
             <TableHead className="w-[80px]">Method</TableHead>
             <TableHead className="w-[80px]">Status</TableHead>
             <TableHead>URL</TableHead>

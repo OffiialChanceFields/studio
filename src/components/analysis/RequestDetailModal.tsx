@@ -30,7 +30,7 @@ export function RequestDetailModal() {
 
   return (
     <Dialog open={isDetailModalOpen} onOpenChange={(isOpen) => !isOpen && dispatch(closeDetailModal())}>
-      <DialogContent className="max-w-4xl h-[80vh] bg-black border-yellow-400/40 text-white">
+      <DialogContent className="max-w-4xl h-[80vh] bg-black border-yellow-400/20 text-white">
         <DialogHeader>
           <DialogTitle className="text-yellow-400 truncate">{entry.request.method} {entry.request.url}</DialogTitle>
           <DialogDescription>
@@ -39,7 +39,7 @@ export function RequestDetailModal() {
         </DialogHeader>
         <div className="h-[calc(80vh-100px)]">
           <Tabs defaultValue="request" className="h-full flex flex-col">
-            <TabsList className="bg-black/60 border border-yellow-400/30">
+            <TabsList className="bg-black/60 border border-yellow-400/20">
               <TabsTrigger value="request">Request</TabsTrigger>
               <TabsTrigger value="response">Response</TabsTrigger>
             </TabsList>

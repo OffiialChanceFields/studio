@@ -36,7 +36,7 @@ export function FilterManager({ totalEntries, filteredCount }: FilterManagerProp
         <h3 className="text-xl font-bold text-yellow-400">Filters</h3>
         <div className="flex items-center gap-4">
           <Select value={logic} onValueChange={(value: 'AND' | 'OR') => dispatch(setLogic(value))}>
-            <SelectTrigger className="w-[100px] bg-black/60 border-yellow-400/40 text-white">
+            <SelectTrigger className="w-[100px] bg-black/60 border-yellow-400/30 text-white">
               <SelectValue placeholder="Logic" />
             </SelectTrigger>
             <SelectContent>
@@ -51,23 +51,23 @@ export function FilterManager({ totalEntries, filteredCount }: FilterManagerProp
       </div>
       <div className="space-y-2">
         {rules.map((rule) => (
-          <div key={rule.id} className="flex items-center gap-2 p-2 rounded-md bg-black/30 border border-yellow-400/30">
+          <div key={rule.id} className="flex items-center gap-2 p-2 rounded-md bg-black/30 border border-yellow-400/20">
             <Switch
               checked={rule.enabled}
               onCheckedChange={() => dispatch(toggleRule(rule.id))}
             />
             <Select value={rule.target} onValueChange={(v) => handleUpdateRule(rule.id, { target: v as FilterTarget })}>
-              <SelectTrigger className="w-[180px] bg-black/60 border-yellow-400/40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[180px] bg-black/60 border-yellow-400/30"><SelectValue /></SelectTrigger>
               <SelectContent>{filterTargets.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={rule.operator} onValueChange={(v) => handleUpdateRule(rule.id, { operator: v as FilterOperator })}>
-              <SelectTrigger className="w-[150px] bg-black/60 border-yellow-400/40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[150px] bg-black/60 border-yellow-400/30"><SelectValue /></SelectTrigger>
               <SelectContent>{filterOperators.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
             </Select>
             <Input
               value={rule.value}
               onChange={(e) => handleUpdateRule(rule.id, { value: e.target.value })}
-              className="flex-grow bg-black/60 border-yellow-400/40"
+              className="flex-grow bg-black/60 border-yellow-400/30"
             />
             <div className="flex items-center space-x-2">
               <Switch id={`case-${rule.id}`} checked={rule.caseSensitive} onCheckedChange={(c) => handleUpdateRule(rule.id, {caseSensitive: c})} />

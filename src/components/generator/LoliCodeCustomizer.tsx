@@ -50,7 +50,7 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
   };
 
   return (
-    <Card className="bg-black/30 border-yellow-400/40">
+    <Card className="bg-black/30 border-yellow-400/20">
       <CardHeader>
         <CardTitle className="text-yellow-400">LoliCode Customizer</CardTitle>
       </CardHeader>
@@ -62,7 +62,7 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
             <Button size="sm" onClick={handleSelectNone}>None</Button>
             <Button size="sm" onClick={handleSelectCriticalPath}>Critical Path</Button>
           </div>
-          <ScrollArea className="h-64 border border-yellow-400/30 rounded-md p-2 bg-black/40">
+          <ScrollArea className="h-64 border border-yellow-400/20 rounded-md p-2 bg-black/40">
             <div className="space-y-2">
               {entries.map((entry, index) => (
                 <div key={entry.entryId} className="flex items-center space-x-2">

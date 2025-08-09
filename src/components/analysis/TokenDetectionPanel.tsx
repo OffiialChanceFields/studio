@@ -42,7 +42,7 @@ export function TokenDetectionPanel({ entries }: TokenDetectionPanelProps) {
   }, [entries]);
 
   return (
-    <Card className="bg-black/30 border-yellow-400/40">
+    <Card className="bg-black/30 border-yellow-400/20">
       <CardHeader>
         <CardTitle className="text-yellow-400">Detected Tokens</CardTitle>
       </CardHeader>
