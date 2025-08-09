@@ -20,7 +20,7 @@ const persistConfig = {
   key: 'root',
   version: 1,
   storage,
-  blacklist: ['analysis', 'ui'] // alysis and ui state are transient
+  blacklist: ['analysis', 'ui', 'workspace'] // alysis, ui, and workspace state are transient
 }
 
 const rootReducer = combineReducers({
