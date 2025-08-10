@@ -1,20 +1,8 @@
 
-/**
- * @fileoverview Main dashboard page with integrated HAR analysis
- * @module @/app/dashboard
- */
-
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setWorkspace, clearWorkspace } from '@/store/slices/workspaceSlice';
-import { applyFilters } from '@/lib/filter/harFilter';
-import { buildDependencyMatrix } from '@/lib/analyzer/DependencyMatrixBuilder';
-import { generateLoliCode, LoliCodeConfig } from '@/lib/generator/LoliCodeGenerator';
-import type { SemanticHarEntry } from '@/lib/parser/types';
-import { useRouter } from 'next/navigation';
-import { getGist } from '@/services/gistService';
+import React from 'react';
+import { useDashboardLogic } from '@/hooks/useDashboardLogic';
 
 // Components
 import { FilterManager } from '@/components/filter/FilterManager';
@@ -24,131 +12,44 @@ import { TokenDetectionPanel } from '@/components/analysis/TokenDetectionPanel';
 import { LoliCodeCustomizer } from '@/components/generator/LoliCodeCustomizer';
 import { LoliCodePreview } from '@/components/generator/LoliCodePreview';
 import { DependencyGraph } from '@/components/analysis/DependencyGraph';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { openDetailModal } from '@/store/slices/uiSlice';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const dispatch = useAppDispatch();
-  const { toast } = useToast();
-
-  const { currentWorkspace } = useAppSelector(state => state.workspace);
-  const filterState = useAppSelector(state => state.filter);
-  
-  const [isLoading, setIsLoading] = useState(true);
-  const [generatedCode, setGeneratedCode] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'requests' | 'dependencies' | 'generator'>('requests');
-  
-  useEffect(() => {
-    const loadWorkspace = async () => {
-      const gistId = sessionStorage.getItem('gistId');
-      if (!gistId) {
-        toast({ title: "No analysis session found", description: "Please upload a HAR file first.", variant: "destructive" });
-        router.push('/');
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        // Clear previous workspace before loading a new one
-        if (currentWorkspace) {
-            dispatch(clearWorkspace());
-        }
-        const workspaceData = await getGist(gistId);
-        dispatch(setWorkspace(workspaceData));
-      } catch (error: any) {
-        console.error("Failed to load workspace from Gist:", error);
-        toast({ title: "Failed to load session", description: error.message || 'An unknown error occurred during session loading.', variant: "destructive" });
-        router.push('/');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadWorkspace();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const harEntries = currentWorkspace?.harEntries || [];
-  
-  const filteredEntries = useMemo(() => {
-    if (harEntries.length === 0) return [];
-    return applyFilters(harEntries, filterState);
-  }, [harEntries, filterState]);
-  
-  const dependencyMatrix = useMemo(() => {
-    if (filteredEntries.length === 0 || isLoading) return null;
-    try {
-      return buildDependencyMatrix(filteredEntries);
-    } catch(e) {
-      console.error("Failed to build dependency matrix", e);
-      toast({ title: "Analysis Failed", description: "Could not build the dependency matrix.", variant: "destructive" });
-      return null;
-    }
-  }, [filteredEntries, isLoading, toast]);
-  
-  const statistics = useMemo(() => {
-    if (filteredEntries.length === 0) {
-      return { totalRequests: 0, uniqueDomains: 0, totalDataTransferred: 0, averageResponseTime: 0, successRate: 0 };
-    }
-    const domains = new Set(filteredEntries.map(e => { try { return new URL(e.request.url).hostname; } catch { return 'invalid'; } }));
-    const totalData = filteredEntries.reduce((sum, e) => sum + (e.response.body?.size || 0) + (e.request.body?.size || 0), 0);
-    const avgTime = filteredEntries.reduce((sum, e) => sum + e.duration, 0) / filteredEntries.length;
-    const successCount = filteredEntries.filter(e => e.response.status >= 200 && e.response.status < 400).length;
-    return {
-      totalRequests: filteredEntries.length,
-      uniqueDomains: domains.size,
-      totalDataTransferred: totalData,
-      averageResponseTime: avgTime,
-      successRate: (successCount / filteredEntries.length) * 100
-    };
-  }, [filteredEntries]);
-  
-  const handleOpenDetailModal = useCallback((entry: SemanticHarEntry, index: number) => {
-    const originalIndex = harEntries.findIndex(e => e.entryId === entry.entryId);
-    dispatch(openDetailModal(originalIndex));
-  }, [dispatch, harEntries]);
-  
-  const handleGenerateCode = useCallback((config: LoliCodeConfig) => {
-    try {
-      if (!dependencyMatrix) throw new Error('No dependency matrix available');
-      const code = generateLoliCode(config, filteredEntries, dependencyMatrix);
-      setGeneratedCode(code);
-      setActiveTab('generator');
-      toast({ title: "LoliCode Generated", description: `Successfully generated script with ${config.selectedIndices.length} requests.` });
-    } catch (error: any) {
-      toast({ title: "Generation Failed", description: error.message, variant: "destructive" });
-    }
-  }, [filteredEntries, dependencyMatrix, toast]);
-  
-  const handleCopyCode = useCallback(() => {
-    if (generatedCode) {
-      navigator.clipboard.writeText(generatedCode);
-      toast({ title: "Copied to Clipboard", description: "LoliCode script has been copied." });
-    }
-  }, [generatedCode, toast]);
-  
-  useEffect(() => {
-    if (generatedCode) setActiveTab('generator');
-  }, [generatedCode]);
+  const {
+    isLoading,
+    currentWorkspace,
+    harEntries,
+    filteredEntries,
+    dependencyMatrix,
+    statistics,
+    activeTab,
+    setActiveTab,
+    generatedCode,
+    handleOpenDetailModal,
+    handleGenerateCode,
+    handleCopyCode,
+  } = useDashboardLogic();
 
   if (isLoading || !currentWorkspace) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6 space-y-6">
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-16 w-full" />
-        <div className="grid grid-cols-3 gap-6">
-          <Skeleton className="h-96 col-span-2" />
-          <Skeleton className="h-96" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6 flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-3xl font-display text-yellow-400 animate-pulse">Analyzing Your Data...</h2>
+          <p className="text-gray-400 mt-2">Loading workspace and building request dependency graph.</p>
+        </div>
+        <div className="w-full max-w-4xl mt-8 space-y-6">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <div className="grid grid-cols-3 gap-6">
+            <Skeleton className="h-96 col-span-2" />
+            <Skeleton className="h-96" />
+          </div>
         </div>
       </div>
-    )
+    );
   }
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
       <div className="max-w-[1920px] mx-auto space-y-6">
@@ -170,11 +71,11 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        
+
         <div className="border border-yellow-400/20 rounded-lg p-4 bg-gradient-to-br from-black to-yellow-900/10">
           <FilterManager totalEntries={harEntries.length} filteredCount={filteredEntries.length} />
         </div>
-        
+
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="bg-black border border-yellow-400/20"><TabsTrigger value="requests" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black">Requests ({filteredEntries.length})</TabsTrigger><TabsTrigger value="dependencies" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={!dependencyMatrix}>Dependencies</TabsTrigger><TabsTrigger value="generator" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={filteredEntries.length === 0}>Generator</TabsTrigger></TabsList>
           
