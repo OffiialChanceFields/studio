@@ -83,8 +83,19 @@ export async function getGist(gistId: string): Promise<Workspace> {
         throw new Error(`Gist does not contain the expected file: ${GIST_FILENAME}`);
     }
 
+    let content: string;
+    if (file.truncated) {
+        const res = await fetch(file.raw_url);
+        if (!res.ok) {
+            throw new Error(`Failed to retrieve truncated content from ${file.raw_url}`);
+        }
+        content = await res.text();
+    } else {
+        content = file.content;
+    }
+
     try {
-        const workspace: Workspace = JSON.parse(file.content);
+        const workspace: Workspace = JSON.parse(content);
         return workspace;
     } catch (e) {
         throw new Error('Failed to parse workspace data from Gist.');
