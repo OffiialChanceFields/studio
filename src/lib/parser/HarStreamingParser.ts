@@ -113,7 +113,7 @@ export class HarStreamingParser {
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
 
-    onProgress?.(1, `Completed: ${semanticEntries.length} entries parsed`);
+    onProgress?.(0.9, 'Finalizing analysis...');
 
     return semanticEntries;
   }
