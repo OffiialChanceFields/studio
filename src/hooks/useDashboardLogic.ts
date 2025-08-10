@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setWorkspace, clearWorkspace } from '@/store/slices/workspaceSlice';
+import { setWorkspace, clearWorkspace, setAnalysis } from '@/store/slices/workspaceSlice';
 import { applyFilters } from '@/lib/filter/harFilter';
 import { buildDependencyMatrix } from '@/lib/analyzer/DependencyMatrixBuilder';
 import { generateLoliCode, LoliCodeConfig } from '@/lib/generator/LoliCodeGenerator';
@@ -60,16 +60,18 @@ export function useDashboardLogic() {
     return applyFilters(harEntries, filterState);
   }, [harEntries, filterState]);
 
-  const dependencyMatrix = useMemo(() => {
+  const analysis = useMemo(() => {
     if (filteredEntries.length === 0 || isLoading) return null;
     try {
-      return buildDependencyMatrix(filteredEntries);
+      const analysisResult = buildDependencyMatrix(filteredEntries);
+      dispatch(setAnalysis(analysisResult));
+      return analysisResult;
     } catch (e) {
       console.error("Failed to build dependency matrix", e);
       toast({ title: "Analysis Failed", description: "Could not build the dependency matrix.", variant: "destructive" });
       return null;
     }
-  }, [filteredEntries, isLoading, toast]);
+  }, [filteredEntries, isLoading, toast, dispatch]);
 
   const statistics = useMemo(() => {
     if (filteredEntries.length === 0) {
@@ -95,15 +97,15 @@ export function useDashboardLogic() {
 
   const handleGenerateCode = useCallback((config: LoliCodeConfig) => {
     try {
-      if (!dependencyMatrix) throw new Error('No dependency matrix available');
-      const code = generateLoliCode(config, filteredEntries, dependencyMatrix);
+      if (!analysis) throw new Error('No analysis available');
+      const code = generateLoliCode(config, filteredEntries, analysis);
       setGeneratedCode(code);
       setActiveTab('generator');
       toast({ title: "LoliCode Generated", description: `Successfully generated script with ${config.selectedIndices.length} requests.` });
     } catch (error: any) {
       toast({ title: "Generation Failed", description: error.message, variant: "destructive" });
     }
-  }, [filteredEntries, dependencyMatrix, toast]);
+  }, [filteredEntries, analysis, toast]);
 
   const handleCopyCode = useCallback(() => {
     if (generatedCode) {
@@ -121,7 +123,7 @@ export function useDashboardLogic() {
     currentWorkspace,
     harEntries,
     filteredEntries,
-    dependencyMatrix,
+    analysis,
     statistics,
     activeTab,
     setActiveTab,

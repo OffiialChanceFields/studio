@@ -25,6 +25,8 @@ export function RequestDetailModal() {
   const { isDetailModalOpen, selectedEntryIndex } = useAppSelector(state => state.ui);
   const { currentWorkspace } = useAppSelector(state => state.workspace);
   const entry = currentWorkspace && selectedEntryIndex !== null ? currentWorkspace.harEntries[selectedEntryIndex] : null;
+  const analysis = currentWorkspace?.analysis;
+  const requestAnalysis = analysis?.requestAnalysis[selectedEntryIndex!];
 
   if (!entry) return null;
 
@@ -42,6 +44,8 @@ export function RequestDetailModal() {
             <TabsList className="bg-black/60 border border-yellow-400/20">
               <TabsTrigger value="request">Request</TabsTrigger>
               <TabsTrigger value="response">Response</TabsTrigger>
+              <TabsTrigger value="tokens" disabled={!requestAnalysis || requestAnalysis.tokens.length === 0}>Tokens</TabsTrigger>
+              <TabsTrigger value="dependencies" disabled={!analysis}>Dependencies</TabsTrigger>
             </TabsList>
             <ScrollArea className="flex-grow mt-2">
               <TabsContent value="request">
@@ -67,6 +71,28 @@ export function RequestDetailModal() {
                   <h4 className="font-bold text-yellow-400 mt-4 mb-2">Body</h4>
                   <pre className="text-xs bg-black/60 p-2 rounded-md whitespace-pre-wrap break-all">{entry.response.body.data}</pre>
                 </>}
+              </TabsContent>
+              <TabsContent value="tokens">
+                {requestAnalysis?.tokens.map((token, i) => (
+                  <div key={i} className="mb-2">
+                    <h4 className="font-bold text-yellow-500">{token.type}</h4>
+                    <p className="text-xs text-gray-400">Value: {token.value}</p>
+                  </div>
+                ))}
+              </TabsContent>
+              <TabsContent value="dependencies">
+                <h4 className="font-bold text-yellow-400 mb-2">Prerequisites</h4>
+                <ul>
+                  {analysis?.adjacencyMatrix[selectedEntryIndex!]?.map((dep, i) =>
+                    dep === 1 ? <li key={i}>Entry {i}</li> : null
+                  )}
+                </ul>
+                <h4 className="font-bold text-yellow-400 mt-4 mb-2">Dependents</h4>
+                <ul>
+                  {analysis?.adjacencyMatrix.map((row, i) =>
+                    row[selectedEntryIndex!] === 1 ? <li key={i}>Entry {i}</li> : null
+                  )}
+                </ul>
               </TabsContent>
             </ScrollArea>
           </Tabs>

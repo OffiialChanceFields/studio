@@ -5,7 +5,7 @@
  */
 
 import type { SemanticHarEntry } from '@/lib/parser/types';
-import type { DependencyMatrix } from './types';
+import type { DetailedAnalysis, RequestAnalysis, TokenInfo } from './types';
 
 /**
  * Build dependency matrix from HAR entries
@@ -18,32 +18,34 @@ export class DependencyMatrixBuilder {
    * @param entries - Chronologically ordered HAR entries
    * @returns Dependency matrix with relationships
    */
-  public build(entries: SemanticHarEntry[]): DependencyMatrix {
-    // Handle empty entries
+  public build(entries: SemanticHarEntry[]): DetailedAnalysis {
+    const emptyAnalysis: DetailedAnalysis = {
+      adjacencyMatrix: [],
+      criticalPath: [],
+      redundantIndices: [],
+      depths: [],
+      topologicalOrder: [],
+      requestAnalysis: [],
+      detectedTokens: [],
+    };
+
     if (!entries || entries.length === 0) {
-      return {
-        adjacencyMatrix: [],
-        criticalPath: [],
-        redundantIndices: [],
-        depths: [],
-        topologicalOrder: []
-      };
+      return emptyAnalysis;
     }
 
     const n = entries.length;
     const adjacencyMatrix = this.initializeMatrix(n);
     
-    // Analyze dependencies with error handling
+    const detectedTokens = this.analyzeTokenDependencies(entries, adjacencyMatrix);
+
     try {
       this.analyzeCookieDependencies(entries, adjacencyMatrix);
-      this.analyzeTokenDependencies(entries, adjacencyMatrix);
       this.analyzeRedirectChains(entries, adjacencyMatrix);
       this.analyzeReferrerDependencies(entries, adjacencyMatrix);
     } catch (error) {
       console.error('Error analyzing dependencies:', error);
     }
-    
-    // Calculate derived properties
+
     const depths = this.calculateDepths(adjacencyMatrix);
     const topologicalOrder = this.topologicalSort(adjacencyMatrix);
     const criticalPath = this.findCriticalPath(adjacencyMatrix, depths);
@@ -52,13 +54,22 @@ export class DependencyMatrixBuilder {
       adjacencyMatrix,
       criticalPath
     );
-    
+
+    const requestAnalysis = this.calculateRequestAnalysis(
+      entries,
+      criticalPath,
+      redundantIndices,
+      detectedTokens
+    );
+
     return {
       adjacencyMatrix,
       criticalPath,
       redundantIndices,
       depths,
-      topologicalOrder
+      topologicalOrder,
+      requestAnalysis,
+      detectedTokens,
     };
   }
   
@@ -109,53 +120,45 @@ export class DependencyMatrixBuilder {
   private analyzeTokenDependencies(
     entries: SemanticHarEntry[],
     matrix: number[][]
-  ): void {
-    // Token patterns
-    const tokenPatterns = [
-      /Bearer\s+[\w-]+\.[\w-]+\.[\w-]+/i, // JWT
-      /csrf[_-]?token["\s:=]+["']?([^"'\s,}]+)/i, // CSRF
-      /session[_-]?id["\s:=]+["']?([^"'\s,}]+)/i, // Session
-      /access[_-]?token["\s:=]+["']?([^"'\s,}]+)/i, // Access token
+  ): TokenInfo[] {
+    const detectedTokens: TokenInfo[] = [];
+    const tokenPatterns: { type: string; pattern: RegExp }[] = [
+      { type: 'JWT', pattern: /Bearer\s+([\w-]+\.[\w-]+\.[\w-]+)/i },
+      { type: 'CSRF', pattern: /csrf[_-]?token["\s:=]+["']?([^"'\s,}]+)/i },
+      { type: 'SessionID', pattern: /session[_-]?id["\s:=]+["']?([^"'\s,}]+)/i },
+      { type: 'AccessToken', pattern: /access[_-]?token["\s:=]+["']?([^"'\s,}]+)/i },
     ];
-    
+
     for (let i = 0; i < entries.length; i++) {
-      try {
-        const requestHeaders = entries[i]?.request?.headers 
-          ? JSON.stringify(entries[i].request.headers) 
-          : '';
-        const requestBody = entries[i]?.request?.body?.data || '';
-        const requestText = requestHeaders + requestBody;
-        
-        // Check if request contains tokens
-        for (const pattern of tokenPatterns) {
-          const match = requestText.match(pattern);
-          if (match) {
-            const token = match[1] || match[0];
-            
-            // Find earlier response that provided this token
+      const requestText =
+        JSON.stringify(entries[i]?.request?.headers || {}) +
+        (entries[i]?.request?.body?.data || '');
+
+      for (const { type, pattern } of tokenPatterns) {
+        const match = requestText.match(pattern);
+        if (match) {
+          const value = match[1] || match[0];
+          if (!detectedTokens.some(t => t.value === value)) {
             for (let j = 0; j < i; j++) {
-              try {
-                const responseBody = entries[j]?.response?.body?.data || '';
-                const responseHeaders = entries[j]?.response?.headers 
-                  ? JSON.stringify(entries[j].response.headers)
-                  : '';
-                const responseText = responseBody + responseHeaders;
-                
-                if (responseText.includes(token)) {
-                  matrix[i][j] = 1; // Request i depends on response j for token
-                }
-              } catch (e) {
-                // Skip this entry if there's an error
-                continue;
+              const responseText =
+                JSON.stringify(entries[j]?.response?.headers || {}) +
+                (entries[j]?.response?.body?.data || '');
+              if (responseText.includes(value)) {
+                matrix[i][j] = 1;
+                detectedTokens.push({
+                  type,
+                  value,
+                  sourceEntry: j,
+                  sourceLocation: 'body', // Simplified for now
+                });
+                break;
               }
             }
           }
         }
-      } catch (e) {
-        // Skip this entry if there's an error
-        continue;
       }
     }
+    return detectedTokens;
   }
   
   /**
@@ -364,30 +367,24 @@ export class DependencyMatrixBuilder {
     if (n === 0) return [];
     
     for (let i = 0; i < n; i++) {
-      // Skip if in critical path
       if (criticalPath.includes(i)) continue;
       
-      // Check if request has no dependents
       let hasDependents = false;
       for (let j = 0; j < n; j++) {
-        if (matrix[j][i] === 1) { // i is a dependency for j
+        if (matrix[j][i] === 1) {
           hasDependents = true;
           break;
         }
       }
       
       if (!hasDependents) {
-        // Additional checks for redundancy
         const entry = entries[i];
-        
         if (!entry) continue;
         
-        // Mark as redundant if:
-        // 1. OPTIONS preflight requests
-        // 2. Failed requests (4xx, 5xx) not in critical path  
         if (
           entry.request?.method === 'OPTIONS' ||
-          (entry.response?.status && entry.response.status >= 400)
+          (entry.response?.status && entry.response.status >= 400) ||
+          this.isDuplicateRequest(entries, i)
         ) {
           redundant.push(i);
         }
@@ -397,57 +394,63 @@ export class DependencyMatrixBuilder {
     return redundant;
   }
   
-  /**
-   * Check if request is duplicate of earlier request
-   */
   private isDuplicateRequest(
     entries: SemanticHarEntry[],
     index: number
   ): boolean {
     const entry = entries[index];
-    
     if (!entry?.request) return false;
     
     for (let i = 0; i < index; i++) {
       const otherEntry = entries[i];
-      if (!otherEntry?.request) continue;
-      
-      try {
-        if (
-          otherEntry.request.url === entry.request.url &&
-          otherEntry.request.method === entry.request.method &&
-          JSON.stringify(otherEntry.request.body) === JSON.stringify(entry.request.body)
-        ) {
-          return true;
-        }
-      } catch (e) {
-        // Skip comparison if there's an error
-        continue;
+      if (
+        otherEntry.request.url === entry.request.url &&
+        otherEntry.request.method === entry.request.method &&
+        JSON.stringify(otherEntry.request.body) === JSON.stringify(entry.request.body)
+      ) {
+        return true;
       }
     }
     
     return false;
   }
+
+  private calculateRequestAnalysis(
+    entries: SemanticHarEntry[],
+    criticalPath: number[],
+    redundantIndices: number[],
+    detectedTokens: TokenInfo[]
+  ): RequestAnalysis[] {
+    return entries.map((entry, i) => {
+      const isCritical = criticalPath.includes(i);
+      const isRedundant = redundantIndices.includes(i);
+      const tokens = detectedTokens.filter(t => {
+        const requestText =
+          JSON.stringify(entry.request.headers) + (entry.request.body?.data || '');
+        return requestText.includes(t.value);
+      });
+
+      let score = 0.5;
+      if (isCritical) score += 0.3;
+      if (isRedundant) score -= 0.3;
+      if (tokens.length > 0) score += 0.2;
+      if (entry.request.method === 'POST') score += 0.1;
+
+      return {
+        isCritical,
+        isRedundant,
+        score: Math.max(0, Math.min(1, score)),
+        tokens,
+      };
+    });
+  }
 }
 
-// Export factory function
 export function buildDependencyMatrix(
   entries: SemanticHarEntry[]
-): DependencyMatrix {
-  try {
-    const builder = new DependencyMatrixBuilder();
-    return builder.build(entries);
-  } catch (error) {
-    console.error('Failed to build dependency matrix:', error);
-    // Return empty matrix on error
-    return {
-      adjacencyMatrix: [],
-      criticalPath: [],
-      redundantIndices: [],
-      depths: [],
-      topologicalOrder: []
-    };
-  }
+): DetailedAnalysis {
+  const builder = new DependencyMatrixBuilder();
+  return builder.build(entries);
 }
 
     

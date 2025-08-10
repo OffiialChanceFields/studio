@@ -17,3 +17,22 @@ export interface DependencyMatrix {
   /** Topologically sorted request indices */
   topologicalOrder: number[];
 }
+
+export interface TokenInfo {
+  type: string;
+  value: string;
+  sourceEntry: number; // The index of the entry where the token was first seen
+  sourceLocation: 'header' | 'body' | 'cookie';
+}
+
+export interface RequestAnalysis {
+  isRedundant: boolean;
+  isCritical: boolean;
+  score: number; // A score from 0 to 1 indicating the importance of the request
+  tokens: TokenInfo[];
+}
+
+export interface DetailedAnalysis extends DependencyMatrix {
+  requestAnalysis: RequestAnalysis[];
+  detectedTokens: TokenInfo[];
+}
