@@ -57,7 +57,7 @@ export default function HomePage() {
       const fileContent = await file.text();
       onProgress(0.05, 'File read into memory.');
 
-      const parser = createParser();
+      const parser = createParser({ includeResponseBodies: false });
       const harEntries = await parser.parse(fileContent, onProgress);
 
       const workspace = {
