@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { FileUp, Loader2, Rocket } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { createGist, GIST_FILENAME } from '@/services/gistService';
+import { createGist } from '@/services/gistService';
 
 export default function HomePage() {
   const router = useRouter();
@@ -55,6 +55,8 @@ export default function HomePage() {
 
     try {
       const fileContent = await file.text();
+      onProgress(0.05, 'File read into memory.');
+
       const parser = createParser();
       const harEntries = await parser.parse(fileContent, onProgress);
 
@@ -131,7 +133,7 @@ export default function HomePage() {
                     {isProcessing && (
                         <div className="space-y-2">
                         <Progress value={progress} className="w-full [&>div]:bg-yellow-400" />
-                        <p className="text-sm text-center text-yellow-400/90">{progressMessage}</p>
+                        <p className="text-sm text-center text-yellow-400/90 h-5">{progressMessage}</p>
                         </div>
                     )}
 
