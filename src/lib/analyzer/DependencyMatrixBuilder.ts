@@ -385,11 +385,9 @@ export class DependencyMatrixBuilder {
         // Mark as redundant if:
         // 1. OPTIONS preflight requests
         // 2. Failed requests (4xx, 5xx) not in critical path  
-        // 3. Duplicate requests to same URL with same method
         if (
           entry.request?.method === 'OPTIONS' ||
-          (entry.response?.status && entry.response.status >= 400) ||
-          this.isDuplicateRequest(entries, i)
+          (entry.response?.status && entry.response.status >= 400)
         ) {
           redundant.push(i);
         }
@@ -397,38 +395,6 @@ export class DependencyMatrixBuilder {
     }
     
     return redundant;
-  }
-  
-  /**
-   * Check if request is duplicate of earlier request
-   */
-  private isDuplicateRequest(
-    entries: SemanticHarEntry[],
-    index: number
-  ): boolean {
-    const entry = entries[index];
-    
-    if (!entry?.request) return false;
-    
-    for (let i = 0; i < index; i++) {
-      const otherEntry = entries[i];
-      if (!otherEntry?.request) continue;
-      
-      try {
-        if (
-          otherEntry.request.url === entry.request.url &&
-          otherEntry.request.method === entry.request.method &&
-          JSON.stringify(otherEntry.request.body) === JSON.stringify(entry.request.body)
-        ) {
-          return true;
-        }
-      } catch (e) {
-        // Skip comparison if there's an error
-        continue;
-      }
-    }
-    
-    return false;
   }
 }
 
