@@ -21,7 +21,7 @@ export default function DashboardPage() {
     currentWorkspace,
     harEntries,
     filteredEntries,
-    dependencyMatrix,
+    analysis,
     statistics,
     activeTab,
     setActiveTab,
@@ -77,11 +77,11 @@ export default function DashboardPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="bg-black border border-yellow-400/20"><TabsTrigger value="requests" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black">Requests ({filteredEntries.length})</TabsTrigger><TabsTrigger value="dependencies" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={!dependencyMatrix}>Dependencies</TabsTrigger><TabsTrigger value="generator" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={filteredEntries.length === 0}>Generator</TabsTrigger></TabsList>
+          <TabsList className="bg-black border border-yellow-400/20"><TabsTrigger value="requests" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black">Requests ({filteredEntries.length})</TabsTrigger><TabsTrigger value="dependencies" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={!analysis}>Dependencies</TabsTrigger><TabsTrigger value="generator" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={filteredEntries.length === 0}>Generator</TabsTrigger></TabsList>
           
-          <TabsContent value="requests" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><RequestDataTable entries={filteredEntries} onEntryClick={handleOpenDetailModal} dependencyMatrix={dependencyMatrix} /></div><div className="space-y-6"><TokenDetectionPanel entries={filteredEntries} /></div></div></TabsContent>
-          <TabsContent value="dependencies" className="mt-4">{dependencyMatrix && <DependencyGraph entries={filteredEntries} matrix={dependencyMatrix} onNodeClick={(index) => handleOpenDetailModal(filteredEntries[index], index)} />}</TabsContent>
-          <TabsContent value="generator" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><LoliCodeCustomizer entries={filteredEntries} dependencyMatrix={dependencyMatrix!} onGenerate={handleGenerateCode} /><LoliCodePreview code={generatedCode} onCopy={handleCopyCode} onDownload={() => { const blob = new Blob([generatedCode], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'script.loli'; a.click(); URL.revokeObjectURL(url); }} /></div></TabsContent>
+          <TabsContent value="requests" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><RequestDataTable entries={filteredEntries} onEntryClick={handleOpenDetailModal} analysis={analysis} /></div><div className="space-y-6"><TokenDetectionPanel /></div></div></TabsContent>
+          <TabsContent value="dependencies" className="mt-4">{analysis && <DependencyGraph entries={filteredEntries} matrix={analysis} onNodeClick={(index) => handleOpenDetailModal(filteredEntries[index], index)} />}</TabsContent>
+          <TabsContent value="generator" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><LoliCodeCustomizer entries={filteredEntries} dependencyMatrix={analysis!} onGenerate={handleGenerateCode} /><LoliCodePreview code={generatedCode} onCopy={handleCopyCode} onDownload={() => { const blob = new Blob([generatedCode], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'script.loli'; a.click(); URL.revokeObjectURL(url); }} /></div></TabsContent>
         </Tabs>
         
         <RequestDetailModal />
