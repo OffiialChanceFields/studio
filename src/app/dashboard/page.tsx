@@ -62,7 +62,7 @@ export default function DashboardPage() {
         dispatch(setWorkspace(workspaceData));
       } catch (error: any) {
         console.error("Failed to load workspace from Gist:", error);
-        toast({ title: "Failed to load session", description: error.message, variant: "destructive" });
+        toast({ title: "Failed to load session", description: error.message || 'An unknown error occurred during session loading.', variant: "destructive" });
         router.push('/');
       } finally {
         setIsLoading(false);
@@ -71,7 +71,7 @@ export default function DashboardPage() {
 
     loadWorkspace();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, router, toast]);
+  }, []);
 
   const harEntries = currentWorkspace?.harEntries || [];
   
@@ -81,14 +81,15 @@ export default function DashboardPage() {
   }, [harEntries, filterState]);
   
   const dependencyMatrix = useMemo(() => {
-    if (filteredEntries.length === 0) return null;
+    if (filteredEntries.length === 0 || isLoading) return null;
     try {
       return buildDependencyMatrix(filteredEntries);
     } catch(e) {
       console.error("Failed to build dependency matrix", e);
+      toast({ title: "Analysis Failed", description: "Could not build the dependency matrix.", variant: "destructive" });
       return null;
     }
-  }, [filteredEntries]);
+  }, [filteredEntries, isLoading, toast]);
   
   const statistics = useMemo(() => {
     if (filteredEntries.length === 0) {
