@@ -138,12 +138,18 @@ export default function DashboardPage() {
 
   if (isLoading || !currentWorkspace) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6 space-y-6">
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-16 w-full" />
-        <div className="grid grid-cols-3 gap-6">
-          <Skeleton className="h-96 col-span-2" />
-          <Skeleton className="h-96" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6 flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-3xl font-display text-yellow-400 animate-pulse">Analyzing Your Data...</h2>
+          <p className="text-gray-400 mt-2">Loading workspace and building request dependency graph.</p>
+        </div>
+        <div className="w-full max-w-4xl mt-8 space-y-6">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <div className="grid grid-cols-3 gap-6">
+            <Skeleton className="h-96 col-span-2" />
+            <Skeleton className="h-96" />
+          </div>
         </div>
       </div>
     )
