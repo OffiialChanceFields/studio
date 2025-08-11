@@ -1,0 +1,31 @@
+diff --git a/node_modules/@radix-ui/react-dialog/dist/index.mjs b/node_modules/@radix-ui/react-dialog/dist/index.mjs
+index 99c368d..3de312f 100644
+--- a/node_modules/@radix-ui/react-dialog/dist/index.mjs
++++ b/node_modules/@radix-ui/react-dialog/dist/index.mjs
+@@ -387,7 +387,7 @@
+       {...contentProps}
+       ref={forwardedRef}
+       onOpenAutoFocus={(event) => {
+-        var _a;
++        var _a, _b;
+         onOpenAutoFocus == null ? void 0 : onOpenAutoFocus(event);
+         if (!event.defaultPrevented) {
+           hasInteractedOutsideRef.current = false;
+@@ -395,7 +395,7 @@
+           isPointerDownOnContentRef.current = false;
+         }
+       }}
+-      onCloseAutoFocus={(event) => {
++      onCloseAutoFocus={onCloseAutoFocus}
+       >
+         {/* Hide nested content from Firefox unless the dialog is open */}
+         {open && children}
+@@ -403,7 +403,7 @@
+         <VisuallyHidden asChild {...visuallyHiddenProps}>
+           <button
+             type="button"
+-            onFocus={() => {
++            onFocus={(event) => {
+               hasInteractedOutsideRef.current = true;
+             }}
+           />
