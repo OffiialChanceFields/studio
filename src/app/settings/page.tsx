@@ -33,7 +33,7 @@ export default function SettingsPage() {
               Your GitHub Personal Access Token is used to save your analysis sessions as private Gists.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <Alert variant="destructive" className="bg-red-900/30 border-red-500/30 text-red-300">
                 <AlertTitle className="text-red-400">Security Warning</AlertTitle>
                 <AlertDescription>
@@ -51,7 +51,7 @@ export default function SettingsPage() {
                 className="bg-black/60 border-yellow-400/30"
               />
             </div>
-            <Button onClick={handleSaveToken} disabled={isLoading}>
+            <Button onClick={handleSaveToken} disabled={isLoading} className="bg-yellow-400 text-black hover:bg-yellow-500 disabled:bg-gray-600">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
