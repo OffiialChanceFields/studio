@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import { useAppSelector } from '@/store/hooks';
 import type { SemanticHarEntry } from '@/lib/parser/types';
 import type { DetailedAnalysis } from '@/lib/analyzer/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -26,6 +27,8 @@ export function RequestDataTable({
   totalPages,
   onPageChange,
 }: RequestDataTableProps) {
+  const { currentWorkspace } = useAppSelector(state => state.workspace);
+
   const getStatusColor = (status: number) => {
     if (status >= 500) return 'bg-red-500';
     if (status >= 400) return 'bg-yellow-500';
@@ -33,12 +36,6 @@ export function RequestDataTable({
     if (status >= 200) return 'bg-green-500';
     return 'bg-gray-500';
   };
-
-  const getOriginalIndex = (paginatedIndex: number) => {
-    const entryId = entries[paginatedIndex]?.entryId;
-    if (!entryId || !analysis) return -1;
-    return analysis.requestAnalysis.findIndex((_, i) => currentWorkspace.harEntries[i].entryId === entryId);
-  }
 
   return (
     <div className="rounded-lg border border-yellow-400/20 bg-black/30 p-1">
@@ -56,10 +53,10 @@ export function RequestDataTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries.map((entry, index) => {
-              const originalIndex = analysis?.requestAnalysis ? 
-                (currentWorkspace?.harEntries || []).findIndex(e => e.entryId === entry.entryId) : -1;
-              const requestAnalysis = originalIndex !== -1 ? analysis?.requestAnalysis[originalIndex] : undefined;
+            {entries.map((entry) => {
+              const originalIndex = analysis?.requestAnalysis && currentWorkspace ? 
+                currentWorkspace.harEntries.findIndex(e => e.entryId === entry.entryId) : -1;
+              const requestAnalysis = originalIndex !== -1 && analysis ? analysis.requestAnalysis[originalIndex] : undefined;
 
               const isCritical = requestAnalysis?.isCritical ?? false;
               const isRedundant = requestAnalysis?.isRedundant ?? false;
@@ -80,7 +77,7 @@ export function RequestDataTable({
                   <TableCell>{(score * 100).toFixed(0)}%</TableCell>
                   <TableCell>{tokens.map(t => t.type).join(', ')}</TableCell>
                   <TableCell>{entry.duration.toFixed(0)}ms</TableCell>
-                  <TableCell>{originalIndex !== -1 ? (analysis?.depths[originalIndex] ?? '-') : '-'}</TableCell>
+                  <TableCell>{originalIndex !== -1 && analysis ? (analysis.depths[originalIndex] ?? '-') : '-'}</TableCell>
                 </TableRow>
               );
             })}
