@@ -1,11 +1,18 @@
 
 import { NextResponse } from 'next/server';
 import type { Workspace } from '@/store/slices/workspaceSlice';
+import type { DetailedAnalysis } from '@/lib/analyzer/types';
 
 const GITHUB_API_URL = 'https://api.github.com';
 export const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVaultAgentMemory.json';
 
-async function createGistOnServer(workspace: Workspace): Promise<string> {
+// StorableWorkspace to not include harEntries, which can be very large.
+interface StorableWorkspace {
+    name: string;
+    analysis: DetailedAnalysis | null;
+}
+
+async function createGistOnServer(workspace: StorableWorkspace): Promise<string> {
     const token = process.env.GIST_TOKEN;
     if (!token) {
         throw new Error('GIST_TOKEN is not configured on the server.');
@@ -47,7 +54,14 @@ export async function POST(request: Request) {
         if (!workspace || !workspace.name || !workspace.harEntries) {
             return NextResponse.json({ error: 'Invalid workspace data provided.' }, { status: 400 });
         }
-        const gistId = await createGistOnServer(workspace);
+
+        // Create a storable version of the workspace, without the harEntries
+        const storableWorkspace: StorableWorkspace = {
+            name: workspace.name,
+            analysis: workspace.analysis,
+        };
+
+        const gistId = await createGistOnServer(storableWorkspace);
         return NextResponse.json({ gistId });
     } catch (error: any) {
         console.error("Error creating Gist:", error);
