@@ -17,7 +17,7 @@ interface LoliCodeCustomizerProps {
 }
 
 export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: LoliCodeCustomizerProps) {
-  const [selectedIndices, setSelectedIndices] = useState<number[]>(() => dependencyMatrix.criticalPath);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>(() => dependencyMatrix?.criticalPath || []);
 
   const handleToggleIndex = (index: number) => {
     setSelectedIndices(prev =>
@@ -34,7 +34,9 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
   }
 
   const handleSelectCriticalPath = () => {
-    setSelectedIndices(dependencyMatrix.criticalPath);
+    if (dependencyMatrix) {
+      setSelectedIndices(dependencyMatrix.criticalPath);
+    }
   }
 
   const generate = () => {
@@ -60,7 +62,7 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
           <div className="flex gap-2 mb-2">
             <Button size="sm" onClick={handleSelectAll}>All</Button>
             <Button size="sm" onClick={handleSelectNone}>None</Button>
-            <Button size="sm" onClick={handleSelectCriticalPath}>Critical Path</Button>
+            <Button size="sm" onClick={handleSelectCriticalPath} disabled={!dependencyMatrix}>Critical Path</Button>
           </div>
           <ScrollArea className="h-64 border border-yellow-400/20 rounded-md p-2 bg-black/40">
             <div className="space-y-2">
