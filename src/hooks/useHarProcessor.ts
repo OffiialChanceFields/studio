@@ -8,24 +8,7 @@ import { setAnalysisProgress, setAnalysisState } from '@/store/slices/analysisSl
 import { createParser } from '@/lib/parser/HarStreamingParser';
 import { useToast } from '@/hooks/use-toast';
 import type { Workspace } from '@/store/slices/workspaceSlice';
-
-async function createGistViaApi(workspace: Workspace): Promise<string> {
-  const response = await fetch('/api/gist/create', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(workspace),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to create Gist via API.');
-  }
-
-  const { gistId } = await response.json();
-  return gistId;
-}
+import { createGistViaApi } from '@/services/gistService';
 
 
 export function useHarProcessor() {

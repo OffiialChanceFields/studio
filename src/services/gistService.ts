@@ -9,8 +9,30 @@ import type { Workspace } from '@/store/slices/workspaceSlice';
 const GITHUB_API_URL = 'https://api.github.com';
 export const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVaultAgentMemory.json';
 
-// This function runs on the client-side, so we can't access process.env directly for the token.
-// The token will be retrieved from an API route to keep it secure.
+
+/**
+ * Creates a Gist by calling the server-side API route.
+ * @param workspace - The workspace data to store in the Gist.
+ * @returns The ID of the created Gist.
+ */
+export async function createGistViaApi(workspace: Workspace): Promise<string> {
+  const response = await fetch('/api/gist/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(workspace),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to create Gist via API.');
+  }
+
+  const { gistId } = await response.json();
+  return gistId;
+}
+
 
 async function getGitHubToken(): Promise<string> {
     const res = await fetch('/api/github-token');
