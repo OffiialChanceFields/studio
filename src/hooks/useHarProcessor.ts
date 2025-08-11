@@ -9,7 +9,7 @@ import { createParser } from '@/lib/parser/HarStreamingParser';
 import { useToast } from '@/hooks/use-toast';
 import type { Workspace } from '@/store/slices/workspaceSlice';
 
-async function createGist(workspace: Workspace): Promise<string> {
+async function createGistViaApi(workspace: Workspace): Promise<string> {
   const response = await fetch('/api/gist/create', {
     method: 'POST',
     headers: {
@@ -79,7 +79,7 @@ export function useHarProcessor() {
       };
 
       onProgress(0.95, 'Saving analysis to secure storage...');
-      const gistId = await createGist(workspace);
+      const gistId = await createGistViaApi(workspace);
       sessionStorage.setItem('gistId', gistId);
 
       onProgress(1, 'Analysis complete. Redirecting...');
