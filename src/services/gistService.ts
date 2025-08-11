@@ -70,7 +70,7 @@ export async function getGist(gistId: string): Promise<Workspace> {
     }
 
     const gistData = await response.json();
-    const file = gistData.files[GIST_FILENAME];
+    const file = gistData.files[process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVaultAgentMemory.json'];
 
     if (!file) {
         throw new Error(`Gist does not contain the expected file: ${GIST_FILENAME}`);
