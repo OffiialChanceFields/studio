@@ -68,17 +68,15 @@ export function useDashboardLogic() {
 
   const analysis = useMemo(() => {
     if (filteredEntries.length === 0 || isLoading) return null;
+    if (currentWorkspace?.analysis) return currentWorkspace.analysis;
     try {
-      if (currentWorkspace?.analysis) return currentWorkspace.analysis;
-      const result = buildDependencyMatrix(filteredEntries);
-      dispatch(setAnalysis(result));
-      return result;
+      return buildDependencyMatrix(filteredEntries);
     } catch (e) {
       console.error("Failed to build dependency matrix", e);
       toast({ title: "Analysis Failed", description: "Could not build the dependency matrix.", variant: "destructive" });
       return null;
     }
-  }, [filteredEntries, isLoading, toast, dispatch, currentWorkspace?.analysis]);
+  }, [filteredEntries, isLoading, toast, currentWorkspace?.analysis]);
 
   useEffect(() => {
     if (analysis && !currentWorkspace?.analysis) {
