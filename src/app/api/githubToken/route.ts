@@ -21,7 +21,7 @@ async function getGistToken() {
 export async function GET() {
   try {
     const token = await getGistToken();
-    return NextResponse.json({ token: token ? "****************" : null });
+    return NextResponse.json({ token });
   } catch (error) {
     console.error("Error reading GIST_TOKEN from .env file:", error);
     return NextResponse.json({ error: 'Could not read server configuration.' }, { status: 500 });

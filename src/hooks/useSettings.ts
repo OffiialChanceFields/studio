@@ -14,7 +14,7 @@ export function useSettings() {
     const fetchTokenStatus = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch('/api/github-token');
+        const res = await fetch('/api/githubToken');
         if (res.ok) {
           const data = await res.json();
           setHasToken(!!data.token);
@@ -31,7 +31,7 @@ export function useSettings() {
   const handleSaveToken = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/github-token', {
+      const res = await fetch('/api/githubToken', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),

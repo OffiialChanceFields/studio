@@ -35,7 +35,7 @@ export async function createGistViaApi(workspace: Workspace): Promise<string> {
 
 
 async function getGitHubToken(): Promise<string> {
-    const res = await fetch('/api/github-token');
+    const res = await fetch('/api/githubToken');
     if (!res.ok) {
         throw new Error('Failed to retrieve GitHub token.');
     }
