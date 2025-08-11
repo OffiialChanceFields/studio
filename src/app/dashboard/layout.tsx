@@ -8,6 +8,7 @@ import {
   SidebarProvider
 } from '@/components/ui/sidebar';
 import { LayoutDashboard, Settings, FileCode } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DashboardLayout({
   children,
