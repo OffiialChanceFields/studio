@@ -16,7 +16,7 @@ export const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVa
  * @returns The ID of the created Gist.
  */
 export async function createGistViaApi(workspace: Workspace): Promise<string> {
-  const response = await fetch('/api/githubToken', {
+  const response = await fetch('/api/gist/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -88,7 +88,11 @@ export async function getGist(gistId: string): Promise<Workspace> {
     }
 
     try {
-        const workspace: Workspace = JSON.parse(content);
+        const partialWorkspace = JSON.parse(content) as Omit<Workspace, 'harEntries'>;
+        const workspace: Workspace = {
+            ...partialWorkspace,
+            harEntries: [], // harEntries are not stored in the Gist to save space.
+        };
         return workspace;
     } catch (e) {
         throw new Error('Failed to parse workspace data from Gist.');
