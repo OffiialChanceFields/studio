@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -10,21 +11,19 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface RequestDataTableProps {
   entries: SemanticHarEntry[];
-  paginatedEntries: SemanticHarEntry[];
-  onEntryClick: (entry: SemanticHarEntry, index: number) => void;
+  onEntryClick: (entry: SemanticHarEntry) => void;
   analysis: DetailedAnalysis | null;
   currentPage: number;
-  requestsPerPage: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
 }
 
 export function RequestDataTable({
   entries,
-  paginatedEntries,
   onEntryClick,
   analysis,
   currentPage,
-  requestsPerPage,
+  totalPages,
   onPageChange,
 }: RequestDataTableProps) {
   const getStatusColor = (status: number) => {
@@ -35,12 +34,11 @@ export function RequestDataTable({
     return 'bg-gray-500';
   };
 
-  const totalPages = Math.ceil(entries.length / requestsPerPage);
-
-  const handleEntryClick = (entry: SemanticHarEntry, paginatedIndex: number) => {
-    const originalIndex = (currentPage - 1) * requestsPerPage + paginatedIndex;
-    onEntryClick(entry, originalIndex);
-  };
+  const getOriginalIndex = (paginatedIndex: number) => {
+    const entryId = entries[paginatedIndex]?.entryId;
+    if (!entryId || !analysis) return -1;
+    return analysis.requestAnalysis.findIndex((_, i) => currentWorkspace.harEntries[i].entryId === entryId);
+  }
 
   return (
     <div className="rounded-lg border border-yellow-400/20 bg-black/30 p-1">
@@ -58,9 +56,11 @@ export function RequestDataTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedEntries.map((entry, index) => {
-              const originalIndex = (currentPage - 1) * requestsPerPage + index;
-              const requestAnalysis = analysis?.requestAnalysis[originalIndex];
+            {entries.map((entry, index) => {
+              const originalIndex = analysis?.requestAnalysis ? 
+                (currentWorkspace?.harEntries || []).findIndex(e => e.entryId === entry.entryId) : -1;
+              const requestAnalysis = originalIndex !== -1 ? analysis?.requestAnalysis[originalIndex] : undefined;
+
               const isCritical = requestAnalysis?.isCritical ?? false;
               const isRedundant = requestAnalysis?.isRedundant ?? false;
               const score = requestAnalysis?.score ?? 0;
@@ -69,7 +69,7 @@ export function RequestDataTable({
               return (
                 <TableRow
                   key={entry.entryId}
-                  onClick={() => handleEntryClick(entry, index)}
+                  onClick={() => onEntryClick(entry)}
                   className={`cursor-pointer hover:bg-yellow-400/10 border-b-yellow-400/20 ${
                     isCritical ? 'bg-yellow-900/30' : ''
                   } ${isRedundant ? 'opacity-50' : ''}`}
@@ -80,7 +80,7 @@ export function RequestDataTable({
                   <TableCell>{(score * 100).toFixed(0)}%</TableCell>
                   <TableCell>{tokens.map(t => t.type).join(', ')}</TableCell>
                   <TableCell>{entry.duration.toFixed(0)}ms</TableCell>
-                  <TableCell>{analysis?.depths[originalIndex] ?? '-'}</TableCell>
+                  <TableCell>{originalIndex !== -1 ? (analysis?.depths[originalIndex] ?? '-') : '-'}</TableCell>
                 </TableRow>
               );
             })}

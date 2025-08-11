@@ -1,13 +1,14 @@
+
 'use client';
 
 import React from 'react';
 import type { SemanticHarEntry } from '@/lib/parser/types';
-import type { DependencyMatrix } from '@/lib/analyzer/types';
+import type { DetailedAnalysis } from '@/lib/analyzer/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface DependencyGraphProps {
   entries: SemanticHarEntry[];
-  matrix: DependencyMatrix;
+  matrix: DetailedAnalysis;
   onNodeClick: (index: number) => void;
 }
 

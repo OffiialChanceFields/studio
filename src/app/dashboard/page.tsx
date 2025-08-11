@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { useDashboardLogic } from '@/hooks/useDashboardLogic';
+import { useRequestTable } from '@/hooks/useRequestTable';
 import { summarizeHarInsights } from '@/ai/flows/summarize-har-insights';
 
 // Components
@@ -24,16 +25,20 @@ export default function DashboardPage() {
     currentWorkspace,
     harEntries,
     filteredEntries,
-    paginatedEntries,
     analysis,
     statistics,
     activeTab,
     setActiveTab,
     handleOpenDetailModal,
+  } = useDashboardLogic();
+
+  const {
     currentPage,
     requestsPerPage,
+    totalPages,
+    paginatedEntries,
     handlePageChange,
-  } = useDashboardLogic();
+  } = useRequestTable(filteredEntries);
 
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState('');
@@ -122,8 +127,8 @@ export default function DashboardPage() {
             <TabsTrigger value="ai" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black">AI Insights</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="requests" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><RequestDataTable entries={filteredEntries} paginatedEntries={paginatedEntries} onEntryClick={handleOpenDetailModal} analysis={analysis} currentPage={currentPage} requestsPerPage={requestsPerPage} onPageChange={handlePageChange} /></div><div className="space-y-6"><TokenDetectionPanel /></div></div></TabsContent>
-          <TabsContent value="dependencies" className="mt-4">{analysis && <DependencyGraph entries={filteredEntries} matrix={analysis} onNodeClick={(index) => handleOpenDetailModal(filteredEntries[index], index)} />}</TabsContent>
+          <TabsContent value="requests" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><RequestDataTable entries={paginatedEntries} onEntryClick={handleOpenDetailModal} analysis={analysis} currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} /></div><div className="space-y-6"><TokenDetectionPanel /></div></div></TabsContent>
+          <TabsContent value="dependencies" className="mt-4">{analysis && <DependencyGraph entries={filteredEntries} matrix={analysis} onNodeClick={(index) => handleOpenDetailModal(filteredEntries[index])} />}</TabsContent>
           <TabsContent value="ai" className="mt-4">
             <Card className="bg-black/30 border-yellow-400/20 animate-border-glow">
               <CardHeader>

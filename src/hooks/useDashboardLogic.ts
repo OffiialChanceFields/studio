@@ -3,7 +3,6 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setCurrentPage } from '@/store/slices/analysisSlice';
 import { setWorkspace, clearWorkspace, setAnalysis } from '@/store/slices/workspaceSlice';
 import { applyFilters } from '@/lib/filter/harFilter';
 import { buildDependencyMatrix } from '@/lib/analyzer/DependencyMatrixBuilder';
@@ -21,7 +20,6 @@ export function useDashboardLogic() {
 
   const { currentWorkspace } = useAppSelector(state => state.workspace);
   const filterState = useAppSelector(state => state.filter);
-  const { currentPage, requestsPerPage } = useAppSelector(state => state.analysis);
 
   const [isLoading, setIsLoading] = useState(true);
   const [generatedCode, setGeneratedCode] = useState('');
@@ -68,12 +66,6 @@ export function useDashboardLogic() {
     return applyFilters(harEntries, filterState);
   }, [harEntries, filterState]);
 
-  const paginatedEntries = useMemo(() => {
-    const startIndex = (currentPage - 1) * requestsPerPage;
-    const endIndex = startIndex + requestsPerPage;
-    return filteredEntries.slice(startIndex, endIndex);
-  }, [filteredEntries, currentPage, requestsPerPage]);
-
   const analysis = useMemo(() => {
     if (filteredEntries.length === 0 || isLoading) return null;
     try {
@@ -111,7 +103,7 @@ export function useDashboardLogic() {
     };
   }, [filteredEntries]);
 
-  const handleOpenDetailModal = useCallback((entry: SemanticHarEntry, index: number) => {
+  const handleOpenDetailModal = useCallback((entry: SemanticHarEntry) => {
     const originalIndex = harEntries.findIndex(e => e.entryId === entry.entryId);
     dispatch(openDetailModal(originalIndex));
   }, [dispatch, harEntries]);
@@ -139,16 +131,11 @@ export function useDashboardLogic() {
     if (generatedCode) setActiveTab('generator');
   }, [generatedCode]);
 
-  const handlePageChange = useCallback((newPage: number) => {
-    dispatch(setCurrentPage(newPage));
-  }, [dispatch]);
-
   return {
     isLoading,
     currentWorkspace,
     harEntries,
     filteredEntries,
-    paginatedEntries,
     analysis,
     statistics,
     activeTab,
@@ -157,8 +144,5 @@ export function useDashboardLogic() {
     handleOpenDetailModal,
     handleGenerateCode,
     handleCopyCode,
-    currentPage,
-    requestsPerPage,
-    handlePageChange,
   };
 }
