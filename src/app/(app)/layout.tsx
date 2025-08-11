@@ -5,12 +5,12 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarItem,
-  SidebarProvider
+  SidebarProvider,
+  SidebarToggle,
 } from '@/components/ui/sidebar';
 import { LayoutDashboard, Settings, FileCode } from 'lucide-react';
-import Link from 'next/link';
 
-export default function DashboardLayout({
+export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -26,6 +26,7 @@ export default function DashboardLayout({
                     <SidebarItem icon={<Settings size={20} />} href="/settings">Settings</SidebarItem>
                 </SidebarGroup>
             </SidebarContent>
+            <SidebarToggle />
         </Sidebar>
         <main className="flex-1 p-4 overflow-auto">{children}</main>
       </div>

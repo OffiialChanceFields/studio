@@ -8,13 +8,14 @@ import { applyFilters } from '@/lib/filter/harFilter';
 import { buildDependencyMatrix } from '@/lib/analyzer/DependencyMatrixBuilder';
 import { generateLoliCode, LoliCodeConfig } from '@/lib/generator/LoliCodeGenerator';
 import type { SemanticHarEntry } from '@/lib/parser/types';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { getGist } from '@/services/gistService';
 import { useToast } from '@/hooks/use-toast';
 import { openDetailModal } from '@/store/slices/uiSlice';
 
 export function useDashboardLogic() {
   const router = useRouter();
+  const pathname = usePathname();
   const dispatch = useAppDispatch();
   const { toast } = useToast();
 
@@ -23,8 +24,12 @@ export function useDashboardLogic() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [generatedCode, setGeneratedCode] = useState('');
-  const [activeTab, setActiveTab] = useState<'requests' | 'dependencies' | 'generator' | 'ai'>('requests');
-
+  
+  const [activeTab, setActiveTab] = useState<'requests' | 'dependencies' | 'generator' | 'ai'>(() => {
+    if (pathname.includes('/generator')) return 'generator';
+    return 'requests';
+  });
+  
   useEffect(() => {
     const loadWorkspace = async () => {
       const gistId = sessionStorage.getItem('gistId');
@@ -111,12 +116,12 @@ export function useDashboardLogic() {
       if (!analysis) throw new Error('No analysis available');
       const code = generateLoliCode(config, filteredEntries, analysis);
       setGeneratedCode(code);
-      setActiveTab('generator');
+      router.push('/dashboard/generator');
       toast({ title: "LoliCode Generated", description: `Successfully generated script with ${config.selectedIndices.length} requests.` });
     } catch (error: any) {
       toast({ title: "Generation Failed", description: error.message, variant: "destructive" });
     }
-  }, [filteredEntries, analysis, toast]);
+  }, [filteredEntries, analysis, toast, router]);
 
   const handleCopyCode = useCallback(() => {
     if (generatedCode) {
@@ -124,10 +129,6 @@ export function useDashboardLogic() {
       toast({ title: "Copied to Clipboard", description: "LoliCode script has been copied." });
     }
   }, [generatedCode, toast]);
-
-  useEffect(() => {
-    if (generatedCode) setActiveTab('generator');
-  }, [generatedCode]);
 
   return {
     isLoading,
