@@ -1,19 +1,22 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDashboardLogic } from '@/hooks/useDashboardLogic';
+import { summarizeHarInsights } from '@/ai/flows/summarize-har-insights';
 
 // Components
 import { FilterManager } from '@/components/filter/FilterManager';
 import { RequestDataTable } from '@/components/analysis/RequestDataTable';
 import { RequestDetailModal } from '@/components/analysis/RequestDetailModal';
 import { TokenDetectionPanel } from '@/components/analysis/TokenDetectionPanel';
-import { LoliCodeCustomizer } from '@/components/generator/LoliCodeCustomizer';
-import { LoliCodePreview } from '@/components/generator/LoliCodePreview';
 import { DependencyGraph } from '@/components/analysis/DependencyGraph';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BrainCircuit, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
   const {
@@ -21,15 +24,51 @@ export default function DashboardPage() {
     currentWorkspace,
     harEntries,
     filteredEntries,
+    paginatedEntries,
     analysis,
     statistics,
     activeTab,
     setActiveTab,
-    generatedCode,
     handleOpenDetailModal,
-    handleGenerateCode,
-    handleCopyCode,
+    currentPage,
+    requestsPerPage,
+    handlePageChange,
   } = useDashboardLogic();
+
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiSummary, setAiSummary] = useState('');
+  const { toast } = useToast();
+
+  const handleAiAnalysis = async () => {
+    if (!currentWorkspace) return;
+    if (filteredEntries.length === 0) {
+      toast({
+        title: 'No Data to Analyze',
+        description: 'Apply filters that result in at least one request to use AI Insights.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsAiLoading(true);
+    setAiSummary('');
+    try {
+      const harData = JSON.stringify({ log: { entries: filteredEntries } });
+      const result = await summarizeHarInsights({ harData });
+      setAiSummary(result.summary);
+      toast({ title: 'AI Analysis Complete', description: 'Insights have been generated.' });
+    } catch (error) {
+      console.error('AI Analysis failed:', error);
+      toast({
+        title: 'AI Analysis Failed',
+        description: 'Could not generate insights for the provided data.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
 
   if (isLoading || !currentWorkspace) {
     return (
@@ -77,17 +116,43 @@ export default function DashboardPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="bg-black border border-yellow-400/20"><TabsTrigger value="requests" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black">Requests ({filteredEntries.length})</TabsTrigger><TabsTrigger value="dependencies" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={!analysis}>Dependencies</TabsTrigger><TabsTrigger value="generator" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={filteredEntries.length === 0}>Generator</TabsTrigger></TabsList>
-          
-          <TabsContent value="requests" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><RequestDataTable entries={filteredEntries} onEntryClick={handleOpenDetailModal} analysis={analysis} /></div><div className="space-y-6"><TokenDetectionPanel /></div></div></TabsContent>
+          <TabsList className="bg-black border border-yellow-400/20">
+            <TabsTrigger value="requests" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black">Requests ({filteredEntries.length})</TabsTrigger>
+            <TabsTrigger value="dependencies" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black" disabled={!analysis}>Dependencies</TabsTrigger>
+            <TabsTrigger value="ai" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black">AI Insights</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="requests" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><RequestDataTable entries={filteredEntries} paginatedEntries={paginatedEntries} onEntryClick={handleOpenDetailModal} analysis={analysis} currentPage={currentPage} requestsPerPage={requestsPerPage} onPageChange={handlePageChange} /></div><div className="space-y-6"><TokenDetectionPanel /></div></div></TabsContent>
           <TabsContent value="dependencies" className="mt-4">{analysis && <DependencyGraph entries={filteredEntries} matrix={analysis} onNodeClick={(index) => handleOpenDetailModal(filteredEntries[index], index)} />}</TabsContent>
-          <TabsContent value="generator" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><LoliCodeCustomizer entries={filteredEntries} dependencyMatrix={analysis!} onGenerate={handleGenerateCode} /><LoliCodePreview code={generatedCode} onCopy={handleCopyCode} onDownload={() => { const blob = new Blob([generatedCode], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'script.loli'; a.click(); URL.revokeObjectURL(url); }} /></div></TabsContent>
+          <TabsContent value="ai" className="mt-4">
+            <Card className="bg-black/30 border-yellow-400/20 animate-border-glow">
+              <CardHeader>
+                <CardTitle className="text-yellow-400 flex justify-between items-center">
+                  <span>AI-Powered Insights</span>
+                  <Button onClick={handleAiAnalysis} disabled={isAiLoading} className="bg-yellow-400 text-black hover:bg-yellow-500">
+                    {isAiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                    {isAiLoading ? 'Analyzing...' : 'Generate Insights'}
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="h-[500px] overflow-auto p-4 text-white rounded-md bg-black/40">
+                {isAiLoading && (
+                  <div className="flex justify-center items-center h-full">
+                    <Loader2 className="h-8 w-8 text-yellow-400 animate-spin" />
+                  </div>
+                )}
+                {aiSummary ? (
+                  <pre className="text-sm whitespace-pre-wrap font-mono">{aiSummary}</pre>
+                ) : (
+                  !isAiLoading && <p className="text-center text-gray-400">Click "Generate Insights" to analyze the filtered requests.</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
-        
+
         <RequestDetailModal />
       </div>
     </div>
   );
 }
-
-    

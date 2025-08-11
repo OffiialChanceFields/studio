@@ -1,7 +1,9 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { setCurrentPage } from '@/store/slices/analysisSlice';
 import { setWorkspace, clearWorkspace, setAnalysis } from '@/store/slices/workspaceSlice';
 import { applyFilters } from '@/lib/filter/harFilter';
 import { buildDependencyMatrix } from '@/lib/analyzer/DependencyMatrixBuilder';
@@ -19,10 +21,11 @@ export function useDashboardLogic() {
 
   const { currentWorkspace } = useAppSelector(state => state.workspace);
   const filterState = useAppSelector(state => state.filter);
+  const { currentPage, requestsPerPage } = useAppSelector(state => state.analysis);
 
   const [isLoading, setIsLoading] = useState(true);
   const [generatedCode, setGeneratedCode] = useState('');
-  const [activeTab, setActiveTab] = useState<'requests' | 'dependencies' | 'generator'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'dependencies' | 'generator' | 'ai'>('requests');
 
   useEffect(() => {
     const loadWorkspace = async () => {
@@ -33,13 +36,18 @@ export function useDashboardLogic() {
         return;
       }
 
+      if (currentWorkspace?.name === gistId) {
+          setIsLoading(false);
+          return;
+      }
+
       try {
         setIsLoading(true);
         if (currentWorkspace) {
           dispatch(clearWorkspace());
         }
         const workspaceData = await getGist(gistId);
-        dispatch(setWorkspace(workspaceData));
+        dispatch(setWorkspace({...workspaceData, name: gistId}));
       } catch (error: any) {
         console.error("Failed to load workspace from Gist:", error);
         toast({ title: "Failed to load session", description: error.message || 'An unknown error occurred during session loading.', variant: "destructive" });
@@ -60,18 +68,31 @@ export function useDashboardLogic() {
     return applyFilters(harEntries, filterState);
   }, [harEntries, filterState]);
 
+  const paginatedEntries = useMemo(() => {
+    const startIndex = (currentPage - 1) * requestsPerPage;
+    const endIndex = startIndex + requestsPerPage;
+    return filteredEntries.slice(startIndex, endIndex);
+  }, [filteredEntries, currentPage, requestsPerPage]);
+
   const analysis = useMemo(() => {
     if (filteredEntries.length === 0 || isLoading) return null;
     try {
-      const analysisResult = buildDependencyMatrix(filteredEntries);
-      dispatch(setAnalysis(analysisResult));
-      return analysisResult;
+      if (currentWorkspace?.analysis) return currentWorkspace.analysis;
+      const result = buildDependencyMatrix(filteredEntries);
+      dispatch(setAnalysis(result));
+      return result;
     } catch (e) {
       console.error("Failed to build dependency matrix", e);
       toast({ title: "Analysis Failed", description: "Could not build the dependency matrix.", variant: "destructive" });
       return null;
     }
-  }, [filteredEntries, isLoading, toast, dispatch]);
+  }, [filteredEntries, isLoading, toast, dispatch, currentWorkspace?.analysis]);
+
+  useEffect(() => {
+    if (analysis && !currentWorkspace?.analysis) {
+      dispatch(setAnalysis(analysis));
+    }
+  }, [analysis, dispatch, currentWorkspace?.analysis]);
 
   const statistics = useMemo(() => {
     if (filteredEntries.length === 0) {
@@ -118,11 +139,16 @@ export function useDashboardLogic() {
     if (generatedCode) setActiveTab('generator');
   }, [generatedCode]);
 
+  const handlePageChange = useCallback((newPage: number) => {
+    dispatch(setCurrentPage(newPage));
+  }, [dispatch]);
+
   return {
     isLoading,
     currentWorkspace,
     harEntries,
     filteredEntries,
+    paginatedEntries,
     analysis,
     statistics,
     activeTab,
@@ -131,5 +157,8 @@ export function useDashboardLogic() {
     handleOpenDetailModal,
     handleGenerateCode,
     handleCopyCode,
+    currentPage,
+    requestsPerPage,
+    handlePageChange,
   };
 }

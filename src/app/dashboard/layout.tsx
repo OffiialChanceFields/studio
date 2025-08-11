@@ -21,7 +21,7 @@ export default function DashboardLayout({
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarItem icon={<LayoutDashboard size={20} />} href="/dashboard">Dashboard</SidebarItem>
-                    <SidebarItem icon={<FileCode size={20} />} href="/generator">Generator</SidebarItem>
+                    <SidebarItem icon={<FileCode size={20} />} href="/dashboard/generator">Generator</SidebarItem>
                     <SidebarItem icon={<Settings size={20} />} href="/settings">Settings</SidebarItem>
                 </SidebarGroup>
             </SidebarContent>

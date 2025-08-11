@@ -6,6 +6,8 @@ interface AnalysisState {
     progress: number;
     message: string;
   };
+  currentPage: number;
+  requestsPerPage: number;
 }
 
 const initialState: AnalysisState = {
@@ -14,6 +16,8 @@ const initialState: AnalysisState = {
     progress: 0,
     message: '',
   },
+  currentPage: 1,
+  requestsPerPage: 50,
 };
 
 export const analysisSlice = createSlice({
@@ -26,8 +30,11 @@ export const analysisSlice = createSlice({
     setAnalysisProgress: (state, action: PayloadAction<{ progress: number, message: string }>) => {
       state.progress = action.payload;
     },
+    setCurrentPage: (state, action: PayloadAction<number>) => {
+      state.currentPage = action.payload;
+    },
   },
 });
 
-export const { setAnalysisState, setAnalysisProgress } = analysisSlice.actions;
+export const { setAnalysisState, setAnalysisProgress, setCurrentPage } = analysisSlice.actions;
 export default analysisSlice.reducer;

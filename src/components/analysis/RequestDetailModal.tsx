@@ -21,7 +21,7 @@ function KeyValueTable({ data }: { data: Record<string, string> }) {
 }
 
 export function RequestDetailModal() {
-  const dispatch = useAppAppDispatch();
+  const dispatch = useAppDispatch();
   const { isDetailModalOpen, selectedEntryIndex } = useAppSelector(state => state.ui);
   const { currentWorkspace } = useAppSelector(state => state.workspace);
   const entry = currentWorkspace && selectedEntryIndex !== null ? currentWorkspace.harEntries[selectedEntryIndex] : null;

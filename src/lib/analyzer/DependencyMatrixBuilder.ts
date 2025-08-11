@@ -367,24 +367,30 @@ export class DependencyMatrixBuilder {
     if (n === 0) return [];
     
     for (let i = 0; i < n; i++) {
+      // Skip if in critical path
       if (criticalPath.includes(i)) continue;
       
+      // Check if request has no dependents
       let hasDependents = false;
       for (let j = 0; j < n; j++) {
-        if (matrix[j][i] === 1) {
+        if (matrix[j][i] === 1) { // i is a dependency for j
           hasDependents = true;
           break;
         }
       }
       
       if (!hasDependents) {
+        // Additional checks for redundancy
         const entry = entries[i];
+        
         if (!entry) continue;
         
+        // Mark as redundant if:
+        // 1. OPTIONS preflight requests
+        // 2. Failed requests (4xx, 5xx) not in critical path  
         if (
           entry.request?.method === 'OPTIONS' ||
-          (entry.response?.status && entry.response.status >= 400) ||
-          this.isDuplicateRequest(entries, i)
+          (entry.response?.status && entry.response.status >= 400)
         ) {
           redundant.push(i);
         }
@@ -394,21 +400,31 @@ export class DependencyMatrixBuilder {
     return redundant;
   }
   
+  /**
+   * Check if request is duplicate of earlier request
+   */
   private isDuplicateRequest(
     entries: SemanticHarEntry[],
     index: number
   ): boolean {
     const entry = entries[index];
+    
     if (!entry?.request) return false;
     
     for (let i = 0; i < index; i++) {
       const otherEntry = entries[i];
-      if (
-        otherEntry.request.url === entry.request.url &&
-        otherEntry.request.method === entry.request.method &&
-        JSON.stringify(otherEntry.request.body) === JSON.stringify(entry.request.body)
-      ) {
-        return true;
+      if (!otherEntry?.request) continue;
+      
+      try {
+        if (
+          otherEntry.request.url === entry.request.url &&
+          otherEntry.request.method === entry.request.method
+        ) {
+          return true;
+        }
+      } catch (e) {
+        // Skip comparison if there's an error
+        continue;
       }
     }
     
@@ -452,5 +468,3 @@ export function buildDependencyMatrix(
   const builder = new DependencyMatrixBuilder();
   return builder.build(entries);
 }
-
-    
