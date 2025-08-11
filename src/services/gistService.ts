@@ -16,7 +16,7 @@ export const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVa
  * @returns The ID of the created Gist.
  */
 export async function createGistViaApi(workspace: Workspace): Promise<string> {
-  const response = await fetch('/api/gist/create', {
+  const response = await fetch('/api/githubToken', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ export async function createGistViaApi(workspace: Workspace): Promise<string> {
 }
 
 
-async function getGitHubToken(): Promise<string> {
+async function getGitHubTokenFromServer(): Promise<string> {
     const res = await fetch('/api/githubToken');
     if (!res.ok) {
         throw new Error('Failed to retrieve GitHub token.');
@@ -53,7 +53,7 @@ async function getGitHubToken(): Promise<string> {
  * @returns The workspace data.
  */
 export async function getGist(gistId: string): Promise<Workspace> {
-    const token = await getGitHubToken();
+    const token = await getGitHubTokenFromServer();
     
     const response = await fetch(`${GITHUB_API_URL}/gists/${gistId}`, {
         method: 'GET', // Explicitly setting method for clarity

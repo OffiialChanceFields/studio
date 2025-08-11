@@ -17,7 +17,7 @@ export function useSettings() {
         const res = await fetch('/api/githubToken');
         if (res.ok) {
           const data = await res.json();
-          setHasToken(!!data.token);
+          setHasToken(data.hasToken);
         }
       } catch (error) {
         console.error('Failed to fetch token status:', error);
