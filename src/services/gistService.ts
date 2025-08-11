@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Service for interacting with GitHub Gists.
  * @module @/services/gistService
@@ -17,44 +18,12 @@ async function getGitHubToken(): Promise<string> {
         throw new Error('Failed to retrieve GitHub token.');
     }
     const { token } = await res.json();
+    if (!token) {
+        throw new Error('GitHub token is not available. Please configure it in the settings.');
+    }
     return token;
 }
 
-/**
- * Creates a new secret Gist to store the workspace data.
- * @param workspace - The workspace data to store.
- * @returns The ID of the created Gist.
- */
-export async function createGist(workspace: Workspace): Promise<string> {
-    const token = await getGitHubToken();
-    const content = JSON.stringify(workspace);
-
-    const response = await fetch(`${GITHUB_API_URL}/gists`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            description: `HAR2LoliCode Analysis Session - ${workspace.name}`,
-            public: false,
-            files: {
-                [GIST_FILENAME]: {
-                    content: content,
-                },
-            },
-        }),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to create Gist: ${errorData.message}`);
-    }
-
-    const gistData = await response.json();
-    return gistData.id;
-}
 
 /**
  * Retrieves the workspace data from a Gist.
@@ -65,7 +34,9 @@ export async function getGist(gistId: string): Promise<Workspace> {
     const token = await getGitHubToken();
     
     const response = await fetch(`${GITHUB_API_URL}/gists/${gistId}`, {
+        method: 'GET', // Explicitly setting method for clarity
         headers: {
+            // The token is now the real token, not the placeholder
             'Authorization': `token ${token}`,
             'Accept': 'application/vnd.github.v3+json',
         },

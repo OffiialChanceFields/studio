@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback } from 'react';
@@ -6,7 +7,26 @@ import { useAppDispatch } from '@/store/hooks';
 import { setAnalysisProgress, setAnalysisState } from '@/store/slices/analysisSlice';
 import { createParser } from '@/lib/parser/HarStreamingParser';
 import { useToast } from '@/hooks/use-toast';
-import { createGist } from '@/services/gistService';
+import type { Workspace } from '@/store/slices/workspaceSlice';
+
+async function createGist(workspace: Workspace): Promise<string> {
+  const response = await fetch('/api/gist/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(workspace),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to create Gist via API.');
+  }
+
+  const { gistId } = await response.json();
+  return gistId;
+}
+
 
 export function useHarProcessor() {
   const router = useRouter();
@@ -52,9 +72,10 @@ export function useHarProcessor() {
       const parser = createParser({ includeResponseBodies: false });
       const harEntries = await parser.parse(fileContent, onProgress);
 
-      const workspace = {
+      const workspace: Workspace = {
         name: file.name,
         harEntries,
+        analysis: null,
       };
 
       onProgress(0.95, 'Saving analysis to secure storage...');

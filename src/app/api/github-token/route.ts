@@ -18,30 +18,10 @@ async function getGistToken() {
   }
 }
 
-async function setGistToken(token: string) {
-  let envFileContent = '';
-  try {
-    envFileContent = await fs.readFile(envFilePath, 'utf-8');
-  } catch (error: any) {
-    if (error.code !== 'ENOENT') throw error;
-  }
-
-  if (envFileContent.includes('GIST_TOKEN')) {
-    envFileContent = envFileContent.replace(/^GIST_TOKEN=.*$/m, `GIST_TOKEN=${token}`);
-  } else {
-    envFileContent += `\nGIST_TOKEN=${token}`;
-  }
-  await fs.writeFile(envFilePath, envFileContent.trim());
-}
-
-
 export async function GET() {
   try {
     const token = await getGistToken();
-    if (token) {
-        return NextResponse.json({ token: token });
-    }
-    return NextResponse.json({ token: null });
+    return NextResponse.json({ token: token ? "****************" : null });
   } catch (error) {
     console.error("Error reading GIST_TOKEN from .env file:", error);
     return NextResponse.json({ error: 'Could not read server configuration.' }, { status: 500 });
@@ -54,10 +34,21 @@ export async function POST(request: Request) {
         if (!token || typeof token !== 'string') {
             return NextResponse.json({ error: 'Invalid token provided.' }, { status: 400 });
         }
-        await setGistToken(token);
-        // We do not recommend restarting the server automatically in production.
-        // For development, a manual restart is safer. For production, environment variables
-        // should be managed by the hosting platform.
+
+        let envFileContent = '';
+        try {
+            envFileContent = await fs.readFile(envFilePath, 'utf-8');
+        } catch (error: any) {
+            if (error.code !== 'ENOENT') throw error;
+        }
+
+        if (envFileContent.includes('GIST_TOKEN')) {
+            envFileContent = envFileContent.replace(/^GIST_TOKEN=.*$/m, `GIST_TOKEN=${token}`);
+        } else {
+            envFileContent += `\nGIST_TOKEN=${token}`;
+        }
+        await fs.writeFile(envFilePath, envFileContent.trim());
+        
         return NextResponse.json({ message: 'Token updated. Please restart the server for changes to take effect if in a local environment.' });
     } catch (error) {
         console.error("Error writing GIST_TOKEN to .env file:", error);
