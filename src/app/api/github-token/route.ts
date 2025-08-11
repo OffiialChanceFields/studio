@@ -38,11 +38,10 @@ async function setGistToken(token: string) {
 export async function GET() {
   try {
     const token = await getGistToken();
-    // To avoid exposing the full token, we can just confirm if it exists.
     if (token) {
-        return NextResponse.json({ token: "****************" });
+        return NextResponse.json({ token: token });
     }
-    return NextResponse.json({ token: "" });
+    return NextResponse.json({ token: null });
   } catch (error) {
     console.error("Error reading GIST_TOKEN from .env file:", error);
     return NextResponse.json({ error: 'Could not read server configuration.' }, { status: 500 });

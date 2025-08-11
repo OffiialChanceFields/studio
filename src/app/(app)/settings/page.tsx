@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/hooks/useSettings';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function SettingsPage() {
   const {
     token,
     setToken,
+    hasToken,
     isLoading,
     handleSaveToken,
   } = useSettings();
@@ -40,30 +41,41 @@ export default function SettingsPage() {
                 Never expose this token publicly. Ensure it has the minimum required permissions (only `gist`).
                 </AlertDescription>
             </Alert>
-            <div className="space-y-2">
-              <Label htmlFor="github-token" className="text-yellow-400">Personal Access Token (PAT)</Label>
-              <Input
-                id="github-token"
-                type="password"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="Enter your GitHub PAT"
-                className="bg-black/60 border-yellow-400/30"
-              />
-            </div>
-            <Button onClick={handleSaveToken} disabled={isLoading} className="bg-yellow-400 text-black hover:bg-yellow-500 disabled:bg-gray-600">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Token
-                </>
-              )}
-            </Button>
+
+            {hasToken ? (
+              <div className="flex items-center gap-2 p-4 rounded-md bg-green-900/30 border border-green-500/30">
+                <CheckCircle className="text-green-400" />
+                <p className="text-green-300">GitHub token is configured on the server.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="github-token" className="text-yellow-400">Personal Access Token (PAT)</Label>
+                <Input
+                  id="github-token"
+                  type="password"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  placeholder="Enter your GitHub PAT"
+                  className="bg-black/60 border-yellow-400/30"
+                />
+              </div>
+            )}
+            
+            {!hasToken && (
+              <Button onClick={handleSaveToken} disabled={isLoading || !token} className="bg-yellow-400 text-black hover:bg-yellow-500 disabled:bg-gray-600">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Token
+                  </>
+                )}
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>

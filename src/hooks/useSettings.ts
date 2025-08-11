@@ -7,24 +7,25 @@ import { useToast } from '@/hooks/use-toast';
 export function useSettings() {
   const { toast } = useToast();
   const [token, setToken] = useState('');
+  const [hasToken, setHasToken] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchToken = async () => {
+    const fetchTokenStatus = async () => {
       setIsLoading(true);
       try {
         const res = await fetch('/api/github-token');
         if (res.ok) {
           const data = await res.json();
-          setToken(data.token || '');
+          setHasToken(!!data.token);
         }
       } catch (error) {
-        console.error('Failed to fetch token:', error);
+        console.error('Failed to fetch token status:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchToken();
+    fetchTokenStatus();
   }, []);
 
   const handleSaveToken = async () => {
@@ -42,6 +43,9 @@ export function useSettings() {
       }
       
       toast({ title: 'Success', description: 'GitHub token saved successfully.' });
+      setHasToken(true);
+      setToken('');
+
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
@@ -52,6 +56,7 @@ export function useSettings() {
   return {
     token,
     setToken,
+    hasToken,
     isLoading,
     handleSaveToken,
   };
