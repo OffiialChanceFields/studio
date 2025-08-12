@@ -92,7 +92,7 @@ export default function HomePage() {
                     <Rocket className="h-4 w-4 text-yellow-400" />
                     <AlertTitle className="text-yellow-400">How it Works</AlertTitle>
                     <AlertDescription className="text-gray-400">
-                        1. Upload a HAR file from your browser's network inspector. <br />
+                        1. Upload a HAR file from your browser&apos;s network inspector. <br />
                         2. Our engine analyzes dependencies and the critical request path. <br />
                         3. Customize the script by selecting requests and adding variables. <br />
                         4. Generate and download your optimized LoliCode script.

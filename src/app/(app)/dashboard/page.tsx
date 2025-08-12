@@ -149,7 +149,7 @@ export default function DashboardPage() {
                 {aiSummary ? (
                   <pre className="text-sm whitespace-pre-wrap font-mono">{aiSummary}</pre>
                 ) : (
-                  !isAiLoading && <p className="text-center text-gray-400">Click "Generate Insights" to analyze the filtered requests.</p>
+                  !isAiLoading && <p className="text-center text-gray-400">Click &quot;Generate Insights&quot; to analyze the filtered requests.</p>
                 )}
               </CardContent>
             </Card>

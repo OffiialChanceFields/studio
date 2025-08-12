@@ -5,9 +5,10 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
 import { setAnalysisProgress, setAnalysisState } from '@/store/slices/analysisSlice';
-import { createParser } from '@/lib/parser/HarStreamingParser';
+import { ParserFactory } from '@/lib/parser/ParserFactory';
 import { useToast } from '@/hooks/use-toast';
 import type { Workspace } from '@/store/slices/workspaceSlice';
+import type { SemanticHarEntry } from '@/lib/parser/types';
 import { createGistViaApi } from '@/services/gistService';
 
 
@@ -49,11 +50,19 @@ export function useHarProcessor() {
     onProgress(0, 'Starting processing...');
 
     try {
-      const fileContent = await file.text();
-      onProgress(0.05, 'File read into memory.');
+      const parser = ParserFactory.createParser(file, { includeResponseBodies: false });
 
-      const parser = createParser({ includeResponseBodies: false });
-      const harEntries = await parser.parse(fileContent, onProgress);
+      let harEntries: SemanticHarEntry[] = [];
+
+      for await (const progress of parser.parseWithProgress(file)) {
+        if (progress.type === 'progress') {
+          onProgress(progress.percent / 100, `Processing... ${progress.percent.toFixed(0)}%`);
+        } else if (progress.type === 'result') {
+          harEntries = progress.entries;
+        } else if (progress.type === 'error') {
+          throw new Error(progress.message);
+        }
+      }
 
       const workspace: Workspace = {
         name: file.name,

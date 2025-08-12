@@ -1,119 +1,95 @@
-
-/**
- * @fileoverview Stream-based HAR file parser with progress reporting
- * @module @/lib/parser
- */
-
-import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import type { 
-  SemanticHarEntry, 
-  ProgressCallback, 
-  ParserConfig
-} from './types';
-import { HarValidator } from './validators/HarValidator';
+import type { SemanticHarEntry, ParseProgress, ParserConfig, Parser } from './types';
 import { RequestTransformer } from './transformers/RequestTransformer';
 import { ResponseTransformer } from './transformers/ResponseTransformer';
+import { HarValidator } from './validators/HarValidator';
 
-/**
- * Stream-based HAR parser with real-time progress updates
- * Processes large HAR files efficiently using chunked parsing
- */
-export class HarStreamingParser {
-  private readonly config: Required<ParserConfig>;
-  private readonly validator: HarValidator;
-  private readonly requestTransformer: RequestTransformer;
-  private readonly responseTransformer: ResponseTransformer;
+export class HarStreamingParser implements Parser {
+  private worker: Worker;
+  private requestTransformer: RequestTransformer;
+  private responseTransformer: ResponseTransformer;
+  private validator: HarValidator;
+  private entriesCount: number = 0;
+  private config: Required<ParserConfig>;
 
   constructor(config: ParserConfig = {}) {
     this.config = {
-      maxBodySize: config.maxBodySize ?? 1024 * 1024, // 1MB
+      maxBodySize: config.maxBodySize ?? 1024 * 1024,
       includeResponseBodies: config.includeResponseBodies ?? true,
       validateSchema: config.validateSchema ?? true,
-      progressInterval: config.progressInterval ?? 100
+      progressInterval: config.progressInterval ?? 100,
     };
-    
-    this.validator = new HarValidator();
+    this.worker = new Worker('/workers/harParser.worker.js');
     this.requestTransformer = new RequestTransformer();
     this.responseTransformer = new ResponseTransformer();
+    this.validator = new HarValidator();
   }
 
-  /**
-   * Parse HAR content with streaming and progress updates
-   * @param harContent - Raw HAR JSON string
-   * @param onProgress - Progress callback (0-1 scale)
-   * @returns Promise resolving to normalized HAR entries
-   * @throws {Error} HAR_TOO_LARGE - File exceeds 50MB
-   * @throws {Error} INVALID_HAR_STRUCTURE - Invalid HAR format
-   */
-  public async parse(
-    harContent: string,
-    onProgress?: ProgressCallback
-  ): Promise<SemanticHarEntry[]> {
-    const sizeInMB = new Blob([harContent]).size / (1024 * 1024);
-    if (sizeInMB > 50) {
-      throw new Error(`HAR_TOO_LARGE: File size ${sizeInMB.toFixed(2)}MB exceeds 50MB limit`);
-    }
+  async *parseWithProgress(file: File): AsyncGenerator<ParseProgress, any, undefined> {
+    const reader = file.stream().getReader();
+    const totalBytes = file.size;
+    let bytesProcessed = 0;
 
-    onProgress?.(0.1, 'Parsing HAR structure...');
-    
-    let harData: any;
-    try {
-      harData = JSON.parse(harContent);
-    } catch (error: any) {
-      throw new Error(`INVALID_HAR_STRUCTURE: Invalid JSON - ${error.message}`);
-    }
+    const workerPromise = new Promise<SemanticHarEntry[]>((resolve, reject) => {
+      this.worker.onmessage = (event) => {
+        const { type, entries, message } = event.data;
+        if (type === 'entries') {
+          const semanticEntries = this.transformEntries(entries);
+          resolve(semanticEntries);
+        } else if (type === 'error') {
+          reject(new Error(message));
+        }
+      };
 
-    onProgress?.(0.2, 'Validating HAR schema...');
-    
-    if (this.config.validateSchema) {
-      const validation = this.validator.validate(harData);
-      if (!validation.isValid) {
-        throw new Error(`INVALID_HAR_STRUCTURE: ${validation.errors[0].message}`);
+      this.worker.onerror = (error) => {
+        reject(error);
+      };
+    });
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        this.worker.postMessage({ done: true });
+        break;
       }
+
+      if (value) {
+        bytesProcessed += value.byteLength;
+        this.worker.postMessage({ chunk: value }, [value.buffer]);
+      }
+
+      yield {
+        type: 'progress',
+        percent: (bytesProcessed / totalBytes) * 100,
+        entriesParsed: this.entriesCount,
+      };
     }
 
-    if (!harData.log?.entries || !Array.isArray(harData.log.entries)) {
-      throw new Error('INVALID_HAR_STRUCTURE: Missing log.entries array');
+    try {
+      const semanticEntries = await workerPromise;
+      yield { type: 'result', entries: semanticEntries };
+    } catch (error: any) {
+      yield { type: 'error', message: error.message };
+    } finally {
+      this.worker.terminate();
     }
+  }
 
-    const entries = harData.log.entries;
-    const totalEntries = entries.length;
+  private transformEntries(entries: any[]): SemanticHarEntry[] {
     const semanticEntries: SemanticHarEntry[] = [];
-
-    onProgress?.(0.3, `Processing ${totalEntries} entries...`);
-
-    for (let i = 0; i < totalEntries; i++) {
-      const entry = entries[i];
-      
+    for (const entry of entries) {
       try {
-        const semanticEntry = this.transformEntry(entry, i);
+        const semanticEntry = this.transformEntry(entry);
         semanticEntries.push(semanticEntry);
       } catch (error: any) {
-        console.warn(`Skipping entry ${i} due to parsing error:`, error.message);
-      }
-      
-      if (i % this.config.progressInterval === 0 || i === totalEntries - 1) {
-        const progress = 0.3 + (0.6 * (i + 1) / totalEntries);
-        onProgress?.(progress, `Processed ${i + 1} of ${totalEntries} entries...`);
-        await new Promise(resolve => setTimeout(resolve, 0)); 
+        console.warn(`Skipping entry due to parsing error:`, error.message);
       }
     }
-    
-    onProgress?.(0.9, 'Sorting entries by timestamp...');
-    semanticEntries.sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    onProgress?.(0.95, 'Finalizing analysis...');
-
+    this.entriesCount = semanticEntries.length;
     return semanticEntries;
   }
 
-  /**
-   * Transform a single HAR entry to semantic format
-   */
-  private transformEntry(entry: any, index: number): SemanticHarEntry {
+  private transformEntry(entry: any): SemanticHarEntry {
     const entryId = uuidv4();
     
     const request = this.requestTransformer.transform(entry.request);
