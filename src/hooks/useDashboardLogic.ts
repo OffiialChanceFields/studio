@@ -64,7 +64,7 @@ export function useDashboardLogic() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const harEntries = currentWorkspace?.harEntries || [];
+  const harEntries = useMemo(() => currentWorkspace?.harEntries || [], [currentWorkspace]);
 
   const filteredEntries = useMemo(() => {
     if (harEntries.length === 0) return [];

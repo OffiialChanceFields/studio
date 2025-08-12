@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import type { TokenInfo } from '@/lib/analyzer/types';
 
 export function TokenDetectionPanel() {
-  const { analysis } = useAppSelector(state => state.workspace.currentWorkspace || {});
+  const currentWorkspace = useAppSelector(state => state.workspace.currentWorkspace);
+  const analysis = currentWorkspace?.analysis;
   const [isMasked, setIsMasked] = useState(true);
 
   const detectedTokens = analysis?.detectedTokens || [];
@@ -25,7 +27,7 @@ export function TokenDetectionPanel() {
         <ScrollArea className="h-[200px]">
           {detectedTokens.length > 0 ? (
             <div className="space-y-4">
-              {detectedTokens.map((token, i) => (
+              {detectedTokens.map((token: TokenInfo, i: number) => (
                 <div key={i}>
                   <h4 className="font-bold text-yellow-500 mb-1">{token.type}</h4>
                   <div className="flex flex-col gap-1">

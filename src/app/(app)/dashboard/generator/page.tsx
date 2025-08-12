@@ -68,7 +68,7 @@ export default function GeneratorPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <LoliCodeCustomizer
             entries={harEntries}
-            dependencyMatrix={analysis.dependencyMatrix}
+            dependencyMatrix={analysis}
             onGenerate={handleGenerateCode}
           />
           <LoliCodePreview

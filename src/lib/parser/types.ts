@@ -84,3 +84,12 @@ export interface ValidationError {
   message: string;
   severity: 'error' | 'warning';
 }
+
+export type ParseProgress =
+  | { type: 'progress'; percent: number, entriesParsed: number }
+  | { type: 'result'; entries: SemanticHarEntry[] }
+  | { type: 'error'; message: string };
+
+export interface Parser {
+  parseWithProgress(file: File): AsyncGenerator<ParseProgress, any, undefined>;
+}
