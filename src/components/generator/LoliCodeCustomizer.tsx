@@ -26,6 +26,7 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
   const [customHeaders, setCustomHeaders] = useState<Record<number, CustomHeader[]>>({});
   const [customAssertions, setCustomAssertions] = useState<Record<number, CustomAssertion[]>>({});
   const [variableExtractions, setVariableExtractions] = useState<Record<number, VariableExtraction[]>>({});
+  const [shouldRefine, setShouldRefine] = useState(false);
 
   const handleToggleIndex = (index: number) => {
     setSelectedIndices(prev =>
@@ -58,6 +59,7 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
       customHeaders,
       customAssertions,
       variableExtractions,
+      refine: shouldRefine,
       settings: {
         useProxy: true,
         followRedirects: false,
@@ -173,6 +175,12 @@ export function LoliCodeCustomizer({ entries, dependencyMatrix, onGenerate }: Lo
               )})}
             </Accordion>
           </ScrollArea>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox id="refine-checkbox" checked={shouldRefine} onCheckedChange={(checked) => setShouldRefine(!!checked)} />
+          <Label htmlFor="refine-checkbox" className="font-medium text-yellow-400">
+            Refine with AI ✨
+          </Label>
         </div>
         <Button onClick={generate} className="w-full bg-yellow-400 text-black font-bold hover:bg-yellow-500">
           Generate LoliCode

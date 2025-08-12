@@ -5,6 +5,7 @@
 
 import type { SemanticHarEntry } from '@/lib/parser/types';
 import type { DependencyMatrix } from '@/lib/analyzer/types';
+import { refineLolicode } from '@/ai/flows/refine-lolicode';
 import { RequestBlockBuilder } from './builders/RequestBlockBuilder';
 import { KeycheckBlockBuilder } from './builders/KeycheckBlockBuilder';
 import { ParseBlockBuilder } from './builders/ParseBlockBuilder';
@@ -15,6 +16,9 @@ import { retry } from '../utils';
  * Configuration for LoliCode generation
  */
 export interface LoliCodeConfig {
+  /** Whether to refine the generated LoliCode using AI */
+  refine?: boolean;
+
   /** Indices of requests to include */
   selectedIndices: number[];
   
@@ -123,7 +127,12 @@ export class LoliCodeGenerator {
       sections.push(this.generateFooter());
 
       // Join sections
-      const script = sections.join('\n\n');
+      let script = sections.join('\n\n');
+
+      // Refine script if requested
+      if (config.refine) {
+        script = await this.refine(script);
+      }
 
       // Validate generated script
       const validation = this.validator.validate(script);
@@ -251,6 +260,22 @@ export class LoliCodeGenerator {
     return `# ═══════════════════════════════════════════════════════════════
 # End of generated script
 # ═══════════════════════════════════════════════════════════════`;
+  }
+
+  /**
+   * Refine LoliCode script using AI
+   * @param script - The script to refine
+   * @returns Refined LoliCode script
+   */
+  private async refine(script: string): Promise<string> {
+    try {
+      const { refinedLolicode } = await refineLolicode({ lolicode: script });
+      return refinedLolicode;
+    } catch (error) {
+      console.error('Failed to refine LoliCode:', error);
+      // Return original script if refinement fails
+      return script;
+    }
   }
 }
 

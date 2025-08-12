@@ -114,7 +114,7 @@ export function useDashboardLogic() {
   const handleGenerateCode = useCallback(async (config: LoliCodeConfig) => {
     try {
       if (!analysis) throw new Error('No analysis available');
-      const code = await generateLoliCode(config, filteredEntries, analysis, 3);
+      const code = await generateLoliCode(config, filteredEntries, analysis);
       setGeneratedCode(code);
       router.push('/dashboard/generator');
       toast({ title: "LoliCode Generated", description: `Successfully generated script with ${config.selectedIndices.length} requests.` });
