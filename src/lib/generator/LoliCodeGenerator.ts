@@ -9,6 +9,7 @@ import { RequestBlockBuilder } from './builders/RequestBlockBuilder';
 import { KeycheckBlockBuilder } from './builders/KeycheckBlockBuilder';
 import { ParseBlockBuilder } from './builders/ParseBlockBuilder';
 import { LoliCodeValidator } from './validators/LoliCodeValidator';
+import { retry } from '../utils';
 
 /**
  * Configuration for LoliCode generation
@@ -63,12 +64,14 @@ export class LoliCodeGenerator {
   private readonly keycheckBuilder: KeycheckBlockBuilder;
   private readonly parseBuilder: ParseBlockBuilder;
   private readonly validator: LoliCodeValidator;
+  private readonly retries: number;
 
-  constructor() {
+  constructor(retries = 0) {
     this.requestBuilder = new RequestBlockBuilder();
     this.keycheckBuilder = new KeycheckBlockBuilder();
     this.parseBuilder = new ParseBlockBuilder();
     this.validator = new LoliCodeValidator();
+    this.retries = retries;
   }
 
   /**
@@ -79,56 +82,58 @@ export class LoliCodeGenerator {
    * @returns Valid LoliCode script
    * @throws {Error} INVALID_CONFIG - Invalid configuration
    */
-  public generate(
+  public async generate(
     config: LoliCodeConfig,
     entries: SemanticHarEntry[],
     dependencyMatrix: DependencyMatrix
-  ): string {
-    // Validate configuration
-    this.validateConfig(config, entries.length);
-    
-    // Sort selected indices by dependency order
-    const sortedIndices = this.sortByDependencies(
-      config.selectedIndices,
-      dependencyMatrix
-    );
-    
-    // Generate script sections
-    const sections: string[] = [];
-    
-    // Add header comment
-    sections.push(this.generateHeader());
-    
-    // Add settings block if provided
-    if (config.settings) {
-      sections.push(this.generateSettings(config.settings));
-    }
-    
-    // Generate request blocks
-    for (const index of sortedIndices) {
-      const entry = entries[index];
-      const requestSection = this.generateRequestSection(
-        entry,
-        index,
-        config
+  ): Promise<string> {
+    return retry(async () => {
+      // Validate configuration
+      this.validateConfig(config, entries.length);
+
+      // Sort selected indices by dependency order
+      const sortedIndices = this.sortByDependencies(
+        config.selectedIndices,
+        dependencyMatrix
       );
-      sections.push(requestSection);
-    }
-    
-    // Add footer
-    sections.push(this.generateFooter());
-    
-    // Join sections
-    const script = sections.join('\n\n');
-    
-    // Validate generated script
-    const validation = this.validator.validate(script);
-    if (!validation.isValid) {
-      console.error("Generated invalid LoliCode:", validation.errors);
-      throw new Error(`Generated invalid LoliCode: ${validation.errors[0]}`);
-    }
-    
-    return script;
+
+      // Generate script sections
+      const sections: string[] = [];
+
+      // Add header comment
+      sections.push(this.generateHeader());
+
+      // Add settings block if provided
+      if (config.settings) {
+        sections.push(this.generateSettings(config.settings));
+      }
+
+      // Generate request blocks
+      for (const index of sortedIndices) {
+        const entry = entries[index];
+        const requestSection = this.generateRequestSection(
+          entry,
+          index,
+          config
+        );
+        sections.push(requestSection);
+      }
+
+      // Add footer
+      sections.push(this.generateFooter());
+
+      // Join sections
+      const script = sections.join('\n\n');
+
+      // Validate generated script
+      const validation = this.validator.validate(script);
+      if (!validation.isValid) {
+        console.error("Generated invalid LoliCode:", validation.errors);
+        throw new Error(`Generated invalid LoliCode: ${validation.errors[0]}`);
+      }
+
+      return script;
+    }, this.retries);
   }
   
   /**
@@ -250,11 +255,12 @@ export class LoliCodeGenerator {
 }
 
 // Export factory function
-export function generateLoliCode(
+export async function generateLoliCode(
   config: LoliCodeConfig,
   entries: SemanticHarEntry[],
-  dependencyMatrix: DependencyMatrix
-): string {
-  const generator = new LoliCodeGenerator();
+  dependencyMatrix: DependencyMatrix,
+  retries?: number
+): Promise<string> {
+  const generator = new LoliCodeGenerator(retries);
   return generator.generate(config, entries, dependencyMatrix);
 }

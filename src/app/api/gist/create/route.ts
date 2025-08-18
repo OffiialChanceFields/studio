@@ -4,7 +4,6 @@ import type { Workspace } from '@/store/slices/workspaceSlice';
 import type { DetailedAnalysis } from '@/lib/analyzer/types';
 
 const GITHUB_API_URL = 'https://api.github.com';
-export const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVaultAgentMemory.json';
 
 // StorableWorkspace to not include harEntries, which can be very large.
 interface StorableWorkspace {
@@ -13,6 +12,7 @@ interface StorableWorkspace {
 }
 
 async function createGistOnServer(workspace: StorableWorkspace): Promise<string> {
+    const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVaultAgentMemory.json';
     const token = process.env.GIST_TOKEN;
     if (!token) {
         throw new Error('GIST_TOKEN is not configured on the server.');
