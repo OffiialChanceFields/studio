@@ -111,10 +111,10 @@ export function useDashboardLogic() {
     dispatch(openDetailModal(originalIndex));
   }, [dispatch, harEntries]);
 
-  const handleGenerateCode = useCallback((config: LoliCodeConfig) => {
+  const handleGenerateCode = useCallback(async (config: LoliCodeConfig) => {
     try {
       if (!analysis) throw new Error('No analysis available');
-      const code = generateLoliCode(config, filteredEntries, analysis);
+      const code = await generateLoliCode(config, filteredEntries, analysis, 3);
       setGeneratedCode(code);
       router.push('/dashboard/generator');
       toast({ title: "LoliCode Generated", description: `Successfully generated script with ${config.selectedIndices.length} requests.` });

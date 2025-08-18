@@ -6,8 +6,6 @@ import type { Workspace } from '@/store/slices/workspaceSlice';
 
 const envFilePath = path.resolve(process.cwd(), '.env');
 const GITHUB_API_URL = 'https://api.github.com';
-export const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVaultAgentMemory.json';
-
 
 async function getGistToken() {
   try {
@@ -33,6 +31,7 @@ export async function GET() {
 }
 
 async function createGistOnServer(workspace: Workspace): Promise<string> {
+    const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVaultAgentMemory.json';
     const token = process.env.GIST_TOKEN;
     if (!token) {
         throw new Error('GIST_TOKEN is not configured on the server.');
