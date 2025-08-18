@@ -1,8 +1,10 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import type { SemanticHarEntry, ParseProgress, ParserConfig, Parser } from './types';
 import { RequestTransformer } from './transformers/RequestTransformer';
 import { ResponseTransformer } from './transformers/ResponseTransformer';
 import { HarValidator } from './validators/HarValidator';
+import { Queue } from '../utils/Queue';
 
 export class HarStreamingParser implements Parser {
   private worker: Worker;
@@ -11,6 +13,7 @@ export class HarStreamingParser implements Parser {
   private validator: HarValidator;
   private entriesCount: number = 0;
   private config: Required<ParserConfig>;
+  private parseQueue: Queue<() => Promise<void>>;
 
   constructor(config: ParserConfig = {}) {
     this.config = {
@@ -23,6 +26,7 @@ export class HarStreamingParser implements Parser {
     this.requestTransformer = new RequestTransformer();
     this.responseTransformer = new ResponseTransformer();
     this.validator = new HarValidator();
+    this.parseQueue = new Queue({ concurrency: 4 });
   }
 
   async *parseWithProgress(file: File): AsyncGenerator<ParseProgress, any, undefined> {
@@ -55,7 +59,10 @@ export class HarStreamingParser implements Parser {
 
       if (value) {
         bytesProcessed += value.byteLength;
-        this.worker.postMessage({ chunk: value }, [value.buffer]);
+        await this.parseQueue.add(() => {
+            this.worker.postMessage({ chunk: value }, [value.buffer]);
+            return Promise.resolve();
+        });
       }
 
       yield {
@@ -67,7 +74,10 @@ export class HarStreamingParser implements Parser {
 
     try {
       const semanticEntries = await workerPromise;
-      yield { type: 'result', entries: semanticEntries };
+      for (const entry of semanticEntries) {
+        yield { type: 'entry', data: entry, entriesParsed: this.entriesCount };
+      }
+      yield { type: 'done', entriesParsed: this.entriesCount };
     } catch (error: any) {
       yield { type: 'error', message: error.message };
     } finally {
@@ -118,8 +128,4 @@ export class HarStreamingParser implements Parser {
       metadata
     };
   }
-}
-
-export function createParser(config?: ParserConfig): HarStreamingParser {
-  return new HarStreamingParser(config);
 }

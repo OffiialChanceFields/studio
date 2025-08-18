@@ -16,10 +16,17 @@ export const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVa
  * @returns The ID of the created Gist.
  */
 export async function createGistViaApi(workspace: Workspace): Promise<string> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('github_token') : null;
+
+    if (!token) {
+        throw new Error("GitHub token is not available. Please configure it in the settings.");
+    }
+    
   const response = await fetch('/api/gist/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `token ${token}`, // Pass token to the server
     },
     body: JSON.stringify(workspace),
   });
@@ -35,11 +42,8 @@ export async function createGistViaApi(workspace: Workspace): Promise<string> {
 
 
 async function getGitHubTokenFromServer(): Promise<string> {
-    const res = await fetch('/api/githubToken');
-    if (!res.ok) {
-        throw new Error('Failed to retrieve GitHub token.');
-    }
-    const { token } = await res.json();
+    const token = typeof window !== 'undefined' ? localStorage.getItem('github_token') : null;
+
     if (!token) {
         throw new Error('GitHub token is not available. Please configure it in the settings.');
     }

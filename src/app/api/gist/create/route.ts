@@ -4,6 +4,7 @@ import type { Workspace } from '@/store/slices/workspaceSlice';
 import type { DetailedAnalysis } from '@/lib/analyzer/types';
 
 const GITHUB_API_URL = 'https://api.github.com';
+const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVaultAgentMemory.json';
 
 // StorableWorkspace to not include harEntries, which can be very large.
 interface StorableWorkspace {
@@ -11,18 +12,13 @@ interface StorableWorkspace {
     analysis: DetailedAnalysis | null;
 }
 
-async function createGistOnServer(workspace: StorableWorkspace): Promise<string> {
-    const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVaultAgentMemory.json';
-    const token = process.env.GIST_TOKEN;
-    if (!token) {
-        throw new Error('GIST_TOKEN is not configured on the server.');
-    }
-    const content = JSON.stringify(workspace);
+async function createGistOnServer(workspace: StorableWorkspace, token: string): Promise<string> {
+    const content = JSON.stringify(workspace, null, 2); // Use pretty print for readability
 
     const response = await fetch(`${GITHUB_API_URL}/gists`, {
         method: 'POST',
         headers: {
-            'Authorization': `token ${token}`,
+            'Authorization': token, // Use the token from the request
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json',
         },
@@ -50,6 +46,11 @@ async function createGistOnServer(workspace: StorableWorkspace): Promise<string>
 
 export async function POST(request: Request) {
     try {
+        const token = request.headers.get('Authorization');
+        if (!token) {
+            return NextResponse.json({ error: 'Authorization token is missing.' }, { status: 401 });
+        }
+
         const workspace = await request.json() as Workspace;
         if (!workspace || !workspace.name || !workspace.harEntries) {
             return NextResponse.json({ error: 'Invalid workspace data provided.' }, { status: 400 });
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
             analysis: workspace.analysis,
         };
 
-        const gistId = await createGistOnServer(storableWorkspace);
+        const gistId = await createGistOnServer(storableWorkspace, token);
         return NextResponse.json({ gistId });
     } catch (error: any) {
         console.error("Error creating Gist:", error);

@@ -1,16 +1,14 @@
-
 'use client';
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
-import { setAnalysisProgress, setAnalysisState } from '@/store/slices/analysisSlice';
-import { ParserFactory } from '@/lib/parser/ParserFactory';
+import { setAnalysisProgress, setAnalysisState, setHarEntries } from '@/store/slices/analysisSlice';
+import { ParserFactory, Parser } from '@/lib/parser/ParserFactory';
 import { useToast } from '@/hooks/use-toast';
 import type { Workspace } from '@/store/slices/workspaceSlice';
 import type { SemanticHarEntry } from '@/lib/parser/types';
 import { createGistViaApi } from '@/services/gistService';
-
 
 export function useHarProcessor() {
   const router = useRouter();
@@ -22,24 +20,26 @@ export function useHarProcessor() {
   const [progressMessage, setProgressMessage] = useState('');
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
+    if (event.target.files && event.target.files.length > 0) {
       setFile(event.target.files[0]);
+      setProgress(0);
+      setProgressMessage('');
     }
   };
 
   const onProgress = useCallback((progress: number, message?: string) => {
-    setProgress(progress * 100);
+    setProgress(progress);
     if (message) {
       setProgressMessage(message);
     }
-    dispatch(setAnalysisProgress({ progress: progress * 100, message: message || '' }));
+    dispatch(setAnalysisProgress({ progress: progress, message: message || '' }));
   }, [dispatch]);
 
   const handleProcessFile = async () => {
     if (!file) {
       toast({
         title: 'No file selected',
-        description: 'Please select a HAR file to process.',
+        description: 'Please select a file to process.',
         variant: 'destructive',
       });
       return;
@@ -47,41 +47,50 @@ export function useHarProcessor() {
 
     setIsProcessing(true);
     dispatch(setAnalysisState(true));
-    onProgress(0, 'Starting processing...');
+    onProgress(0, 'Initializing parser...');
 
     try {
-      const parser = ParserFactory.createParser(file, { includeResponseBodies: false });
+      const parser: Parser = ParserFactory.createParser(file);
+      const harEntries: SemanticHarEntry[] = [];
 
-      let harEntries: SemanticHarEntry[] = [];
-
-      for await (const progress of parser.parseWithProgress(file)) {
-        if (progress.type === 'progress') {
-          onProgress(progress.percent / 100, `Processing... ${progress.percent.toFixed(0)}%`);
-        } else if (progress.type === 'result') {
-          harEntries = progress.entries;
-        } else if (progress.type === 'error') {
-          throw new Error(progress.message);
+      for await (const result of parser.parseWithProgress(file)) {
+        switch (result.type) {
+          case 'progress':
+            const msg = `Parsing... ${result.entriesParsed || 0} entries found.`;
+            onProgress(result.percent || 0, msg);
+            break;
+          case 'entry':
+            if (result.data) {
+              harEntries.push(result.data);
+              dispatch(setHarEntries(harEntries)); // Update Redux store with new entries
+            }
+            break;
+          case 'done':
+            onProgress(95, `Parsing complete. Found ${result.entriesParsed} entries. Saving session...`);
+            break;
+          case 'error':
+            throw new Error(result.message || 'An unknown parsing error occurred.');
         }
       }
-
+      
       const workspace: Workspace = {
         name: file.name,
         harEntries,
         analysis: null,
       };
 
-      onProgress(0.95, 'Saving analysis to secure storage...');
       const gistId = await createGistViaApi(workspace);
       sessionStorage.setItem('gistId', gistId);
 
-      onProgress(1, 'Analysis complete. Redirecting...');
+      onProgress(100, 'Analysis complete. Redirecting...');
       toast({
         title: 'Processing Complete',
         description: `${harEntries.length} entries parsed and stored.`,
       });
 
       router.push('/dashboard');
-    } catch (error: any) {
+
+    } catch (error: any) Rankin{
       console.error('Failed to process HAR file:', error);
       toast({
         title: 'Processing Failed',

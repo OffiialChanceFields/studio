@@ -1,8 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
+
+const GITHUB_TOKEN_KEY = 'github_token';
 
 export function useSettings() {
   const { toast } = useToast();
@@ -10,44 +12,36 @@ export function useSettings() {
   const [hasToken, setHasToken] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchTokenStatus = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/githubToken');
-        if (res.ok) {
-          const data = await res.json();
-          setHasToken(data.hasToken);
-        }
-      } catch (error) {
-        console.error('Failed to fetch token status:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchTokenStatus();
+  // Memoize the function to fetch token status to avoid re-creating it on every render
+  const fetchTokenStatus = useCallback(() => {
+    // Safely access localStorage only on the client side
+    if (typeof window !== 'undefined') {
+      const storedToken = localStorage.getItem(GITHUB_TOKEN_KEY);
+      setHasToken(!!storedToken);
+    }
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchTokenStatus();
+  }, [fetchTokenStatus]);
 
   const handleSaveToken = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/githubToken', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to save token');
+      // Safely access localStorage only on the client side
+      if (typeof window !== 'undefined') {
+        if (!token) {
+          throw new Error('Token cannot be empty.');
+        }
+        localStorage.setItem(GITHUB_TOKEN_KEY, token);
+        setHasToken(true); // First, confirm that the token is set
+        setToken(''); // Then, clear the input
+        toast({ title: 'Success', description: 'GitHub token saved successfully.' });
       }
-      
-      toast({ title: 'Success', description: 'GitHub token saved successfully.' });
-      setHasToken(true);
-      setToken('');
-
     } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: error.message || 'Failed to save token.', variant: 'destructive' });
+      setHasToken(false); // Reflect that token saving failed
     } finally {
       setIsLoading(false);
     }
