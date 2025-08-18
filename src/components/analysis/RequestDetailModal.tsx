@@ -6,6 +6,17 @@ import { closeDetailModal } from '@/store/slices/uiSlice';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { PlusCircle } from 'lucide-react';
+import { addVariableExtraction } from '@/store/slices/generatorSlice';
+import { useToast } from '@/hooks/use-toast';
+import type { TokenInfo } from '@/lib/analyzer/types';
+
+// Helper to escape regex special characters
+const escapeRegex = (str: string) => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
 
 function KeyValueTable({ data }: { data: Record<string, string> }) {
   return (
@@ -23,12 +34,30 @@ function KeyValueTable({ data }: { data: Record<string, string> }) {
 export function RequestDetailModal() {
   const dispatch = useAppDispatch();
   const { isDetailModalOpen, selectedEntryIndex } = useAppSelector(state => state.ui);
+  const { toast } = useToast();
   const { currentWorkspace } = useAppSelector(state => state.workspace);
   const entry = currentWorkspace && selectedEntryIndex !== null ? currentWorkspace.harEntries[selectedEntryIndex] : null;
   const analysis = currentWorkspace?.analysis;
   const requestAnalysis = analysis?.requestAnalysis[selectedEntryIndex!];
 
   if (!entry) return null;
+
+  const handleAddVariable = (token: TokenInfo) => {
+    const variableName = `${token.type}_${token.sourceEntry}`;
+    dispatch(addVariableExtraction({
+      entryIndex: token.sourceEntry,
+      extraction: {
+        variableName,
+        type: 'regex',
+        pattern: escapeRegex(token.value),
+        isGlobal: true,
+      }
+    }));
+    toast({
+      title: "Variable Extraction Added",
+      description: `Rule created for ${variableName} from Entry ${token.sourceEntry}.`
+    });
+  };
 
   return (
     <Dialog open={isDetailModalOpen} onOpenChange={(isOpen) => !isOpen && dispatch(closeDetailModal())}>
@@ -73,12 +102,27 @@ export function RequestDetailModal() {
                 </>}
               </TabsContent>
               <TabsContent value="tokens">
-                {requestAnalysis?.tokens.map((token, i) => (
-                  <div key={i} className="mb-2">
-                    <h4 className="font-bold text-yellow-500">{token.type}</h4>
-                    <p className="text-xs text-gray-400">Value: {token.value}</p>
-                  </div>
-                ))}
+                <div className="space-y-4">
+                  {requestAnalysis?.tokens.map((token, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-yellow-500 mb-1">{token.type}</h4>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="secondary" className="font-mono text-xs truncate bg-gray-700 text-gray-300">
+                            {token.value}
+                          </Badge>
+                          <div className="text-xs text-gray-400">
+                            Source: Entry {token.sourceEntry} ({token.sourceLocation})
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => handleAddVariable(token)}>
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Add Variable
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </TabsContent>
               <TabsContent value="dependencies">
                 <h4 className="font-bold text-yellow-400 mb-2">Prerequisites</h4>

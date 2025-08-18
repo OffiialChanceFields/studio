@@ -22,7 +22,7 @@ export interface TokenInfo {
   type: string;
   value: string;
   sourceEntry: number; // The index of the entry where the token was first seen
-  sourceLocation: 'header' | 'body' | 'cookie';
+  sourceLocation: 'header' | 'body' | 'cookie' | 'url';
 }
 
 export interface RequestAnalysis {

@@ -15,7 +15,7 @@ export const GIST_FILENAME = process.env.NEXT_PUBLIC_GIST_FILE_NAME || 'GeminiVa
  * @param workspace - The workspace data to store in the Gist.
  * @returns The ID of the created Gist.
  */
-export async function createGistViaApi(workspace: Workspace): Promise<string> {
+export async function createGistViaApi(workspace: Omit<Workspace, 'harEntries'>): Promise<string> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('github_token') : null;
 
     if (!token) {

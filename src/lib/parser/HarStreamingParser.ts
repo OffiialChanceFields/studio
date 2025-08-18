@@ -100,6 +100,13 @@ export class HarStreamingParser implements Parser {
   }
 
   private transformEntry(entry: any): SemanticHarEntry {
+    if (this.config.validateSchema) {
+      const { error } = this.validator.validate(entry);
+      if (error) {
+        throw new Error(`Invalid HAR entry schema: ${error.message}`);
+      }
+    }
+
     const entryId = uuidv4();
     
     const request = this.requestTransformer.transform(entry.request);

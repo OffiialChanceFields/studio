@@ -6,6 +6,7 @@
 
 import type { SemanticHarEntry } from '@/lib/parser/types';
 import type { DetailedAnalysis, RequestAnalysis, TokenInfo } from './types';
+import { TokenAnalyzer } from './TokenAnalyzer';
 
 /**
  * Build dependency matrix from HAR entries
@@ -36,7 +37,10 @@ export class DependencyMatrixBuilder {
     const n = entries.length;
     const adjacencyMatrix = this.initializeMatrix(n);
     
-    const detectedTokens = this.analyzeTokenDependencies(entries, adjacencyMatrix);
+    // Use the new TokenAnalyzer
+    const tokenAnalyzer = new TokenAnalyzer();
+    const detectedTokens = tokenAnalyzer.analyze(entries);
+    this.addTokenDependenciesToMatrix(entries, detectedTokens, adjacencyMatrix);
 
     try {
       this.analyzeCookieDependencies(entries, adjacencyMatrix);
@@ -114,51 +118,35 @@ export class DependencyMatrixBuilder {
   }
   
   /**
-   * Analyze token-based dependencies
-   * Detects JWT, CSRF, and session tokens
+   * Updates the adjacency matrix based on discovered token dependencies.
+   * A request depends on another if it uses a token defined in the other's response.
    */
-  private analyzeTokenDependencies(
+  private addTokenDependenciesToMatrix(
     entries: SemanticHarEntry[],
+    tokens: TokenInfo[],
     matrix: number[][]
-  ): TokenInfo[] {
-    const detectedTokens: TokenInfo[] = [];
-    const tokenPatterns: { type: string; pattern: RegExp }[] = [
-      { type: 'JWT', pattern: /Bearer\s+([\w-]+\.[\w-]+\.[\w-]+)/i },
-      { type: 'CSRF', pattern: /csrf[_-]?token["\s:=]+["']?([^"'\s,}]+)/i },
-      { type: 'SessionID', pattern: /session[_-]?id["\s:=]+["']?([^"'\s,}]+)/i },
-      { type: 'AccessToken', pattern: /access[_-]?token["\s:=]+["']?([^"'\s,}]+)/i },
-    ];
+  ): void {
+    if (!tokens.length) return;
 
     for (let i = 0; i < entries.length; i++) {
-      const requestText =
-        JSON.stringify(entries[i]?.request?.headers || {}) +
-        (entries[i]?.request?.body?.data || '');
+      const entry = entries[i];
+      if (!entry?.request) continue;
 
-      for (const { type, pattern } of tokenPatterns) {
-        const match = requestText.match(pattern);
-        if (match) {
-          const value = match[1] || match[0];
-          if (!detectedTokens.some(t => t.value === value)) {
-            for (let j = 0; j < i; j++) {
-              const responseText =
-                JSON.stringify(entries[j]?.response?.headers || {}) +
-                (entries[j]?.response?.body?.data || '');
-              if (responseText.includes(value)) {
-                matrix[i][j] = 1;
-                detectedTokens.push({
-                  type,
-                  value,
-                  sourceEntry: j,
-                  sourceLocation: 'body', // Simplified for now
-                });
-                break;
-              }
-            }
-          }
+      const requestText =
+        JSON.stringify(entry.request.headers) +
+        (entry.request.body?.data || '') +
+        entry.request.url;
+
+      for (const token of tokens) {
+        // A request can't use a token defined after it.
+        if (i <= token.sourceEntry) continue;
+
+        // If the request text includes the token value, it's a dependency.
+        if (requestText.includes(token.value)) {
+          matrix[i][token.sourceEntry] = 1;
         }
       }
     }
-    return detectedTokens;
   }
   
   /**

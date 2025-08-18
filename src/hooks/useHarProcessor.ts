@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Workspace } from '@/store/slices/workspaceSlice';
 import type { SemanticHarEntry } from '@/lib/parser/types';
 import { createGistViaApi } from '@/services/gistService';
+import pako from 'pako';
 
 export function useHarProcessor() {
   const router = useRouter();
@@ -79,8 +80,27 @@ export function useHarProcessor() {
         analysis: null,
       };
 
-      const gistId = await createGistViaApi(workspace);
+      // Create a storable version of the workspace, without the harEntries
+      const storableWorkspace: Omit<Workspace, 'harEntries'> = {
+        name: workspace.name,
+        analysis: workspace.analysis,
+      };
+
+      const gistId = await createGistViaApi(storableWorkspace);
       sessionStorage.setItem('gistId', gistId);
+
+      // Compress and store harEntries in sessionStorage
+      try {
+        const compressedHarEntries = pako.deflate(JSON.stringify(harEntries), { to: 'string' });
+        sessionStorage.setItem(`harEntries_${gistId}`, compressedHarEntries);
+      } catch (e) {
+        console.error('Failed to save HAR entries to session storage:', e);
+        toast({
+          title: 'Error Saving Session',
+          description: 'Could not save HAR entries to session storage. The session will not be restorable on page refresh.',
+          variant: 'destructive',
+        });
+      }
 
       onProgress(100, 'Analysis complete. Redirecting...');
       toast({
@@ -90,7 +110,7 @@ export function useHarProcessor() {
 
       router.push('/dashboard');
 
-    } catch (error: any) Rankin{
+    } catch (error: any) {
       console.error('Failed to process HAR file:', error);
       toast({
         title: 'Processing Failed',

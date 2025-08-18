@@ -30,6 +30,7 @@ export default function DashboardPage() {
     activeTab,
     setActiveTab,
     handleOpenDetailModal,
+    handleSelectAiRequests,
   } = useDashboardLogic();
 
   const {
@@ -42,6 +43,7 @@ export default function DashboardPage() {
 
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState('');
+  const [aiSuggestedRequests, setAiSuggestedRequests] = useState<string[]>([]);
   const { toast } = useToast();
 
   const handleAiAnalysis = async () => {
@@ -58,9 +60,10 @@ export default function DashboardPage() {
     setIsAiLoading(true);
     setAiSummary('');
     try {
-      const harData = JSON.stringify({ log: { entries: filteredEntries } });
+      const harData = JSON.stringify({ log: { entries: filteredEntries.map(e => ({...e, entryId: e.entryId})) } });
       const result = await summarizeHarInsights({ harData });
       setAiSummary(result.summary);
+      setAiSuggestedRequests(result.suggestedRequestIds || []);
       toast({ title: 'AI Analysis Complete', description: 'Insights have been generated.' });
     } catch (error) {
       console.error('AI Analysis failed:', error);
@@ -127,17 +130,24 @@ export default function DashboardPage() {
             <TabsTrigger value="ai" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black">AI Insights</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="requests" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><RequestDataTable entries={paginatedEntries} onEntryClick={handleOpenDetailModal} analysis={analysis} currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} /></div><div className="space-y-6"><TokenDetectionPanel /></div></div></TabsContent>
+          <TabsContent value="requests" className="mt-4 space-y-6"><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><RequestDataTable entries={paginatedEntries} onEntryClick={handleOpenDetailModal} analysis={analysis} currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} aiSuggestedRequests={aiSuggestedRequests} /></div><div className="space-y-6"><TokenDetectionPanel /></div></div></TabsContent>
           <TabsContent value="dependencies" className="mt-4">{analysis && <DependencyGraph entries={filteredEntries} matrix={analysis} onNodeClick={(index) => handleOpenDetailModal(filteredEntries[index])} />}</TabsContent>
           <TabsContent value="ai" className="mt-4">
             <Card className="bg-black/30 border-yellow-400/20 animate-border-glow">
               <CardHeader>
                 <CardTitle className="text-yellow-400 flex justify-between items-center">
                   <span>AI-Powered Insights</span>
-                  <Button onClick={handleAiAnalysis} disabled={isAiLoading} className="bg-yellow-400 text-black hover:bg-yellow-500">
-                    {isAiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                    {isAiLoading ? 'Analyzing...' : 'Generate Insights'}
-                  </Button>
+                  <div className="flex gap-2">
+                    {aiSuggestedRequests.length > 0 && (
+                      <Button onClick={() => handleSelectAiRequests(aiSuggestedRequests)} className="bg-green-500 text-black hover:bg-green-600">
+                        Select Suggested for LoliCode
+                      </Button>
+                    )}
+                    <Button onClick={handleAiAnalysis} disabled={isAiLoading} className="bg-yellow-400 text-black hover:bg-yellow-500">
+                      {isAiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                      {isAiLoading ? 'Analyzing...' : 'Generate Insights'}
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="h-[500px] overflow-auto p-4 text-white rounded-md bg-black/40">
