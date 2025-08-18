@@ -15,12 +15,13 @@ import workspaceReducer from './slices/workspaceSlice';
 import analysisReducer from './slices/analysisSlice';
 import filterReducer from '@/lib/filter/filterSlice';
 import uiReducer from './slices/uiSlice';
+import generatorReducer from './slices/generatorSlice';
 
 const persistConfig = {
   key: 'root',
   version: 1,
   storage,
-  blacklist: ['analysis', 'ui', 'workspace'] // alysis, ui, and workspace state are transient
+  blacklist: ['analysis', 'ui', 'workspace', 'generator'] // analysis, ui, and workspace state are transient
 }
 
 const rootReducer = combineReducers({
@@ -28,6 +29,7 @@ const rootReducer = combineReducers({
   analysis: analysisReducer,
   filter: filterReducer,
   ui: uiReducer,
+  generator: generatorReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

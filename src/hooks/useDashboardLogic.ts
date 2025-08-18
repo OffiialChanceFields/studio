@@ -12,6 +12,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { getGist } from '@/services/gistService';
 import { useToast } from '@/hooks/use-toast';
 import { openDetailModal } from '@/store/slices/uiSlice';
+import { setSelectedIndices } from '@/store/slices/generatorSlice';
+import pako from 'pako';
+import type { Workspace } from '@/store/slices/workspaceSlice';
 
 export function useDashboardLogic() {
   const router = useRouter();
@@ -21,6 +24,7 @@ export function useDashboardLogic() {
 
   const { currentWorkspace } = useAppSelector(state => state.workspace);
   const filterState = useAppSelector(state => state.filter);
+  const generatorState = useAppSelector(state => state.generator);
 
   const [isLoading, setIsLoading] = useState(true);
   const [generatedCode, setGeneratedCode] = useState('');
@@ -49,8 +53,28 @@ export function useDashboardLogic() {
         if (currentWorkspace) {
           dispatch(clearWorkspace());
         }
-        const workspaceData = await getGist(gistId);
-        dispatch(setWorkspace({...workspaceData, name: gistId}));
+
+        // Try to load harEntries from sessionStorage first
+        const compressedHarEntries = sessionStorage.getItem(`harEntries_${gistId}`);
+        if (compressedHarEntries) {
+          try {
+            const decompressed = pako.inflate(compressedHarEntries as any, { to: 'string' });
+            const harEntries = JSON.parse(decompressed);
+            const workspaceData = await getGist(gistId); // still get metadata from gist
+            const fullWorkspace: Workspace = { ...workspaceData, harEntries, name: gistId };
+            dispatch(setWorkspace(fullWorkspace));
+          } catch (e) {
+            console.error('Failed to load or parse HAR entries from session storage:', e);
+            toast({ title: "Failed to load session data", description: "Could not load data from the browser session. Please try uploading the file again.", variant: "destructive" });
+            router.push('/');
+            return;
+          }
+        } else {
+          // Fallback to old behavior if session data is not found
+          const workspaceData = await getGist(gistId);
+          dispatch(setWorkspace({...workspaceData, name: gistId}));
+        }
+
       } catch (error: any) {
         console.error("Failed to load workspace from Gist:", error);
         toast({ title: "Failed to load session", description: error.message || 'An unknown error occurred during session loading.', variant: "destructive" });
@@ -111,17 +135,21 @@ export function useDashboardLogic() {
     dispatch(openDetailModal(originalIndex));
   }, [dispatch, harEntries]);
 
-  const handleGenerateCode = useCallback(async (config: LoliCodeConfig) => {
+  const handleGenerateCode = useCallback(async () => {
     try {
       if (!analysis) throw new Error('No analysis available');
-      const code = await generateLoliCode(config, filteredEntries, analysis);
+      if (generatorState.selectedIndices.length === 0) {
+        toast({ title: "No Requests Selected", description: "Please select requests to include in the script.", variant: "destructive" });
+        return;
+      }
+      const code = await generateLoliCode(generatorState, filteredEntries, analysis);
       setGeneratedCode(code);
       router.push('/dashboard/generator');
-      toast({ title: "LoliCode Generated", description: `Successfully generated script with ${config.selectedIndices.length} requests.` });
+      toast({ title: "LoliCode Generated", description: `Successfully generated script with ${generatorState.selectedIndices.length} requests.` });
     } catch (error: any) {
       toast({ title: "Generation Failed", description: error.message, variant: "destructive" });
     }
-  }, [filteredEntries, analysis, toast, router]);
+  }, [filteredEntries, analysis, toast, router, generatorState]);
 
   const handleCopyCode = useCallback(() => {
     if (generatedCode) {
@@ -129,6 +157,20 @@ export function useDashboardLogic() {
       toast({ title: "Copied to Clipboard", description: "LoliCode script has been copied." });
     }
   }, [generatedCode, toast]);
+
+  const handleSelectAiRequests = useCallback((suggestedIds: string[]) => {
+    const selectedIndices = suggestedIds.map(id => filteredEntries.findIndex(e => e.entryId === id)).filter(index => index !== -1);
+
+    if (selectedIndices.length === 0) {
+      toast({ title: "No Suggested Requests Found", description: "Could not find any of the AI suggested requests in the current filtered list.", variant: "destructive" });
+      return;
+    }
+
+    dispatch(setSelectedIndices(selectedIndices));
+    router.push('/dashboard/generator');
+    toast({ title: "AI Requests Selected", description: `Selected ${selectedIndices.length} requests. Ready to generate.` });
+
+  }, [filteredEntries, dispatch, router, toast]);
 
   return {
     isLoading,
@@ -143,5 +185,6 @@ export function useDashboardLogic() {
     handleOpenDetailModal,
     handleGenerateCode,
     handleCopyCode,
+    handleSelectAiRequests,
   };
 }

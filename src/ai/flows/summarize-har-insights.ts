@@ -12,6 +12,7 @@ export type SummarizeHarInsightsInput = z.infer<typeof SummarizeHarInsightsInput
 
 const SummarizeHarInsightsOutputSchema = z.object({
   summary: z.string().describe('A summary report of the HAR file insights, including potential security vulnerabilities and key data flows.'),
+  suggestedRequestIds: z.array(z.string()).describe('An array of entry IDs for requests that are key to the identified data flows or vulnerabilities.'),
 });
 export type SummarizeHarInsightsOutput = z.infer<typeof SummarizeHarInsightsOutputSchema>;
 
@@ -26,6 +27,8 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert security analyst specializing in identifying vulnerabilities from HAR files.
 
   Analyze the provided HAR data and generate a summary report highlighting potential security vulnerabilities, key data flows, and the overall risk profile.
+
+  Based on your analysis, identify the most critical requests that a developer should focus on when building an automation script. Return the \`entryId\` for each of these critical requests in the \`suggestedRequestIds\` array.
 
   HAR Data: {{{harData}}}`,
 });

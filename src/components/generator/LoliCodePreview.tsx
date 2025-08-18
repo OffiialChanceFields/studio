@@ -29,4 +29,18 @@ export function LoliCodePreview({
           <Button variant="outline" size="sm" onClick={onCopy} disabled={!code}>
             <Copy className="h-4 w-4 mr-2" /> Copy
           </Button>
-          <Button variant="outline" size="sm" onClick={onDownload
+          <Button variant="outline" size="sm" onClick={onDownload} disabled={!code}>
+            <Download className="h-4 w-4 mr-2" /> Download
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[500px] font-mono text-xs p-4 bg-black/50 rounded-md">
+          <pre>
+            <code>{code || '// Your generated LoliCode will appear here...'}</code>
+          </pre>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}

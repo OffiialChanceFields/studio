@@ -17,6 +17,7 @@ interface RequestDataTableProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  aiSuggestedRequests?: string[];
 }
 
 export function RequestDataTable({
@@ -26,6 +27,7 @@ export function RequestDataTable({
   currentPage,
   totalPages,
   onPageChange,
+  aiSuggestedRequests = [],
 }: RequestDataTableProps) {
   const { currentWorkspace } = useAppSelector(state => state.workspace);
 
@@ -62,6 +64,7 @@ export function RequestDataTable({
               const isRedundant = requestAnalysis?.isRedundant ?? false;
               const score = requestAnalysis?.score ?? 0;
               const tokens = requestAnalysis?.tokens ?? [];
+              const isAiSuggested = aiSuggestedRequests.includes(entry.entryId);
 
               return (
                 <TableRow
@@ -69,9 +72,14 @@ export function RequestDataTable({
                   onClick={() => onEntryClick(entry)}
                   className={`cursor-pointer hover:bg-yellow-400/10 border-b-yellow-400/20 ${
                     isCritical ? 'bg-yellow-900/30' : ''
-                  } ${isRedundant ? 'opacity-50' : ''}`}
+                  } ${isRedundant ? 'opacity-50' : ''} ${
+                    isAiSuggested ? 'bg-green-900/40 animate-pulse' : ''
+                  }`}
                 >
-                  <TableCell><Badge variant="outline" className="border-yellow-400/60 text-yellow-400">{entry.request.method}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="border-yellow-400/60 text-yellow-400">{entry.request.method}</Badge>
+                    {isAiSuggested && <Badge className="ml-2 bg-green-500 text-black">AI</Badge>}
+                  </TableCell>
                   <TableCell><Badge className={getStatusColor(entry.response.status)}>{entry.response.status}</Badge></TableCell>
                   <TableCell className="truncate max-w-xs">{new URL(entry.request.url).pathname}</TableCell>
                   <TableCell>{(score * 100).toFixed(0)}%</TableCell>
